@@ -1,0 +1,56 @@
+﻿BantayAsenso: The Plain-Language Version
+1. The Big Idea
+BantayAsenso is like Waze with a magnifying glass for road repairs. Point your phone at a construction sign or an open trench, and the app tells you who’s doing the work, how much it costs, and when it’s supposed to be finished.
+2. The Everyday Problem
+If you live or commute in a Philippine city, you already know the pattern. A road gets dug up, traffic backs up for weeks, and nobody says when it will be done. Sometimes the work seems to stop completely. Sometimes there’s a hole with no cones, no barricade, and no warning light, and it’s dangerous at night. People call this maling hukay, a bad or careless dig.
+The official information exists, but it’s hard to use. Government project websites are built for engineers. They’re full of contract codes and PDF files. Nobody can look up a 10-digit code while sitting in a jeepney, and nobody should have to. So most people just complain, shrug, and take the detour.
+3. How It Works
+Step 1: Point your camera. Aim your phone at the project sign (the paskil) or at the road hazard. You don’t type anything.
+Step 2: The app reads it for you. An AI camera reader scans the sign’s text and pulls out the key facts: the contractor, the budget, and the target finish date. For hazards, a second AI checks the photo for missing barricades or missing warning lights and tells you if something looks wrong. It’s a “this might be a problem, please check” signal, not an official ruling.
+Step 3: See it on the map and speak up. Every project shows up as a colored pin on a neighborhood map. Green means on schedule, yellow means the deadline is close, and red means it’s late or has a safety problem. You can post a quick update with a photo, so the community sees what’s actually happening on the ground, not just what’s promised on paper.
+4. Why It’s a Game-Changer
+* It gives ordinary citizens real information. You no longer need an engineering degree or a government login to know what’s happening on your street. You can check in seconds, from your phone, right where the work is.
+* It makes neighborhoods safer. A missing barricade or an unlit trench can be spotted and reported by whoever walks or drives past first, instead of waiting for an accident to draw attention.
+* It holds contractors and local offices accountable. When a project is late, there’s a clear record with dates and photos, and the app can help you write a complaint to your local government office in one tap. Good contractors get recognized, and slow ones can’t hide.
+
+
+SUGGESTIONS
+Same ui as pokemon go but user interface friendly(must be intuitiv)
+Add contractor details
+Add yung pag file ng report galing sa app using geotagging
+Dpwh only says the progress accomplishment ng contract but sa app yung may pinapakita na delay if like matagal ng walang progress yung consturction
+If no billboard, filter out entries sa dpwh site based on location gamit geotagging
+Cannot get response from dpwh but show urgency nalang
+Create feature where it can raise the sense of urgency
+Admin and complain page
+Response module 
+Ensure user confidentiality and security (!)
+5 locations only for demo (1 green, 1 amber, 2 red, 1 unverified citizen record)
+Remove user names 
+Location suggestions: General Trias, Dasmariñas, Imus, Bacoor
+* For the demo itself, keep the map view tight. Five projects along one or two streets fit on one screen, so judges can see all the colors at once and you don’t have to pan or zoom during the pitch.
+* Avoid using real contractor names, real budgets, or real project records as if they were live data. Use the 5 projects as clearly labeled sample data, and say so in the pitch. Then you won’t be asserting facts about real government contracts you haven’t verified. (!)
+
+
+
+
+Concerns:
+1. How will we test if the scanner really works?
+* In software development and QA, this is handled using Mock Testing, Synthetic Test Data, and Virtual Environments.
+* 1. Print Physical Sample Posters (Mock Billboards): Print 2–3 high-resolution sample DPWH signboards or hazard photos and tape them to a wall. This lets you test real mobile camera focus, angles, and lighting inside your room without needing to go outside.
+* 2. Target High-Resolution Digital Screens: Display billboard images on a laptop or monitor at 80% brightness and point your phone’s camera directly at the screen to simulate real-world scanning.
+* 3. Build a "Demo / Test Preset" Gallery in the App: Add a hidden "Select Sample Image" button in the scanner screen. This feeds pre-loaded photos directly into your AI pipeline, giving you a reliable backup during live judge presentations if camera lighting or internet connection drops.
+* Wow factor: For your final pitch deck video or live demo in front of the judges, place a printed mini-billboard on a small easel at your table. Have your presenter point the phone camera at it live—it creates an impressive, tangible "magic moment" for the judging panel!
+
+
+Tips
+* Freeze the build 2 hours before stage. No code changes after the freeze except fixes for S1 crashes, and those must pass the smoke test again. 
+
+
+Possible questions:
+* What problem are you trying to solve?
+* What is the impact of the app?
+* What is the motivation behind the project?
+* What is the benefit?
+* How do you envision(roadmap)  this 5 years from now?
+* What makes it different from the existing projects

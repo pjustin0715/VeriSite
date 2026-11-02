@@ -1,0 +1,46 @@
+﻿* Rehearse the pitch twice with a timer, and keep a recorded demo as a backup.
+Look for Problems That Are:
+1. Popular – lots of people have this issue
+2. Growing – it's becoming more relevant
+3. Urgent – needs solving now
+4. Expensive – costs time, money, or energy
+5. Mandatory – no one can avoid it
+6. Frequent – happens often, e.g. multiple times a day
+AIDA Framework (Marketing & Pitches)
+Use this to structure your user pitch, landing page, or product presentation during or after the hackathon.
+1. Attention – Grab their focus (a stat, a question, a pain point).
+2. Interest – Explain the value in a way that resonates.
+3. Desire – Make it feel personally relevant and emotionally compelling.
+4. Action – Ask for a clear next step (download, sign up, vote, invest).
+When presenting the product, follow the AIDA order from earlier. Open with the problem and one real number. Show who it hurts. Demo the core flow. End with one clear ask. Rehearse the whole pitch at least twice with a timer, and cut whatever runs over. 
+
+
+Now, you’ll also have to demo the actual product. Ideally, run the live product on your computer.
+
+
+* Only demo the features that are functional and essential to the core problem you are solving.
+* Use pre-loaded data to prevent slow loading or unpredictable network errors. 
+* Always have a backup plan, such as a recorded video of the demo or high-fidelity screenshots in your deck, in case of technical failure.
+What judges usually score
+Every hackathon publishes its own criteria, so read them first. These show up most often:
+* Problem: is it real, and who has it?
+* Solution: does it actually fit the problem?
+* Demo: does the core flow work on stage?
+* Impact: who benefits, and by how much?
+* Feasibility: could this exist after the weekend, and who would pay for it or run it?
+* Pitch: is it clear, and does it fit the time?
+A pitch template
+For a five minute pitch, this order works and follows the AIDA idea from earlier:
+* 30 seconds: the problem and one real number.
+* 30 seconds: who it hurts.
+* 2 minutes: a live demo of the core flow.
+* 1 minute: how it works and why it can be built.
+* 30 seconds: who benefits and what happens next.
+* 30 seconds: one clear ask, then thank the judges.
+Common mistakes
+* Building before understanding the problem.
+* Adding features instead of finishing the core flow.
+* Skipping the demo rehearsal, then losing minutes to setup on stage.
+* Relying on live internet during the demo.
+* Leaving the pitch to the last hour.
+* Missing a rule, such as the submission deadline or a required tool.

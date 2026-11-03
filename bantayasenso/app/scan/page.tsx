@@ -204,16 +204,27 @@ function ScanInner() {
         <button onClick={() => router.push("/")} className="text-slate-400">Cancel</button>
       </div>
 
-      <label className="mt-4 block cursor-pointer rounded-xl border-2 border-dashed border-slate-700 p-6 text-center">
-        <span className="font-semibold">📷 Take Photo with Rear Camera</span>
-        <input
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={(e) => e.target.files?.[0] && runAnalyze(e.target.files[0])}
-        />
-      </label>
+      <div className="mt-4 flex gap-3">
+        <label className="flex-1 cursor-pointer rounded-xl border-2 border-dashed border-slate-700 p-5 text-center">
+          <span className="font-semibold">📷 Camera</span>
+          <input
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && runAnalyze(e.target.files[0])}
+          />
+        </label>
+        <label className="flex-1 cursor-pointer rounded-xl border-2 border-dashed border-slate-700 p-5 text-center">
+          <span className="font-semibold">🖼️ Upload</span>
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && runAnalyze(e.target.files[0])}
+          />
+        </label>
+      </div>
 
       {/* Sample picker for judges without a printed billboard (F7) */}
       <div className="mt-4">

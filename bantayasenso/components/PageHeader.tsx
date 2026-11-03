@@ -1,10 +1,12 @@
 import Image from "next/image";
+import type { IconName } from "@/components/Icon";
 import IconButton from "@/components/IconButton";
 
 // Sky header with an illustration (head-*.png), back button and title, then a rounded sheet holding the page content.
 export default function PageHeader({
   image = "head-plain",
   back,
+  backIcon = "back",
   title,
   subtitle,
   right,
@@ -12,7 +14,8 @@ export default function PageHeader({
 }: {
   image?: "head-plain" | "head-happy" | "head-scan" | "head-walk" | "head-worry";
   back?: string;
-  title: string;
+  backIcon?: IconName; // "close" for screens that leave a flow, e.g. Result
+  title: React.ReactNode;
   subtitle?: string;
   right?: React.ReactNode; // e.g. a bookmark IconButton
   children: React.ReactNode;
@@ -22,7 +25,7 @@ export default function PageHeader({
       <Image src={`/verisite/${image}.png`} alt="" width={780} height={552} preload className="absolute inset-x-0 top-0 h-auto w-full" />
       <div className="relative px-5 pt-[max(52px,env(safe-area-inset-top))]">
         <div className="flex min-h-[46px] justify-between">
-          {back && <IconButton href={back} icon="back" label="Bumalik" />}
+          {back && <IconButton href={back} icon={backIcon} label={backIcon === "close" ? "Isara" : "Bumalik"} />}
           {right}
         </div>
         <h1 className="mt-2.5 text-[28px] font-bold leading-[1.12] tracking-[-0.5px] [text-shadow:0px_1px_5px_#00000033]">{title}</h1>

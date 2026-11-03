@@ -1,5 +1,6 @@
 // Sample data for the clickable VeriSite frontend. Taken from the mockups in docs/verisite-design/screens.
 // shortcut: hard-coded, no Supabase/Gemini; replace with real queries when the backend is wired up.
+import type { IconName } from "@/components/Icon";
 import type { Status } from "@/components/StatusLabel";
 
 export const badges = [
@@ -78,3 +79,25 @@ export const myReports = [
   { place: "Salawag Rd", issue: "Walang ilaw", date: "Okt 20", status: "naaksyunan" as Status },
   { place: "Governor's Drive", issue: "Lampas sa petsa", date: "Okt 12", status: "tinitingnan" as Status },
 ];
+
+// Scan result (W-Result): the matched project and what the AI found.
+export const scanResult = {
+  project: { name: "Kalsada, Aguinaldo Hwy", distance: "80 metro ang layo", image: "road" },
+  // Same fields as SIGN_SCHEMA in app/api/analyze. A field with `sign` and `record` does not match the record.
+  signFields: [
+    { label: "Contract ID" },
+    { label: "Pangalan ng proyekto" },
+    { label: "Kontratista" },
+    { label: "Opisina" },
+    { label: "Halaga", sign: "₱5,200,000", record: "₱4,850,000" },
+    { label: "Petsa ng simula" },
+    { label: "Petsa ng pagtatapos", sign: "Nob 15", record: "Okt 4" },
+  ] as { label: string; sign?: string; record?: string }[],
+  // `found` = the AI saw it, so it starts checked.
+  hazards: [
+    { label: "Bukas na hukay", note: "Nakita sa litrato", icon: "hole" as IconName, found: true },
+    { label: "Walang harang", note: "Nakita sa litrato", icon: "barrier" as IconName, found: true },
+    { label: "Walang ilaw", note: "Hindi sigurado ang AI", icon: "bulb" as IconName, found: false },
+  ],
+  reportId: "VS-2026-1147",
+};

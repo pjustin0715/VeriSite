@@ -39,6 +39,22 @@ const paths = {
   ),
   question: <path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.3-1.5 2.4M12 18v.1" />,
   bookmark: <path d="M6 4h12v17l-6-4-6 4z" />,
+  close: <path d="M6 6l12 12M18 6L6 18" />,
+  flash: <path d="M13 3L5 14h6l-1 7 8-11h-6z" />,
+  sign: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2" />
+      <path d="M9 8h6M9 12h6M9 16h4" />
+    </>
+  ),
+  hole: <path d="M3 15c3-7 15-7 18 0-3 5-15 5-18 0z" />,
+  barrier: <path d="M4 8h16v6H4zM7 14v7M17 14v7" />,
+  bulb: (
+    <>
+      <path d="M9 18h6M10 21h4" />
+      <path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof paths;

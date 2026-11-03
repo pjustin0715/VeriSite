@@ -60,7 +60,15 @@ export function authorBadge(totalLikes: number): string | null {
 
 export function normContractId(raw?: string | null): string | null {
     const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    return cleaned || null;
+    if (!cleaned) return null;
+    if (cleaned.length >= 6) {
+        const year = cleaned.slice(0, 2).replace(/[OD]/g, "0");
+        const mid = cleaned.slice(2, -4);
+        const midFixed = (mid[0] === "0" ? "O" : mid[0] || "") + mid.slice(1);
+        const seq = cleaned.slice(-4).replace(/[OD]/g, "0");
+        return year + midFixed + seq;
+    }
+    return cleaned;
 }
 
 export type ProjectStatusRow = {

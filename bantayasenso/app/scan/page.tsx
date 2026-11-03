@@ -36,24 +36,35 @@ function ScanInner() {
   async function checkMatch(rawCid?: string | null) {
     const cid = normContractId(rawCid);
     if (!cid) return false;
-    let { data: existing } = await supabase
-      .from("projects")
-      .select("id")
-      .eq("contract_id", cid)
-      .maybeSingle();
 
-    if (!existing && cid.length >= 4) {
-      const altChar = cid[2] === "0" ? "O" : cid[2] === "O" ? "0" : cid[2];
-      const alt = cid.slice(0, 2) + altChar + cid.slice(3);
-      if (alt !== cid) {
-        const { data: altHit } = await supabase
-          .from("projects")
-          .select("id")
-          .eq("contract_id", alt)
-          .maybeSingle();
-        existing = altHit;
+    const variants = [cid];
+    if (cid.length >= 6) {
+      const year = cid.slice(0, 2);
+      const mid = cid.slice(2, -4);
+      const seq = cid.slice(-4);
+      const opts = [...mid].map((ch, idx) => {
+        if (!"0OD".includes(ch)) return [ch];
+        const pool = idx === 0 ? ["O", "D"] : ["0", "O", "D"];
+        return [ch, ...pool.filter((x) => x !== ch)];
+      });
+      const prefixes = opts.reduce<string[]>(
+        (acc, list) => acc.flatMap((p) => list.map((c) => p + c)),
+        [""]
+      );
+      for (const m of prefixes) {
+        const v = year + m + seq;
+        if (!variants.includes(v)) variants.push(v);
       }
     }
+
+    const { data: hits } = await supabase
+      .from("projects")
+      .select("id, contract_id")
+      .in("contract_id", variants);
+
+    let existing = variants
+      .map((v) => hits?.find((h) => h.contract_id === v))
+      .find(Boolean);
 
     if (!existing && cid.length >= 6) {
       const year = cid.slice(0, 2);
@@ -66,7 +77,7 @@ function ScanInner() {
         if (candidates && candidates.length > 0) {
           const midLetters = cid.slice(2, -4);
           const best = candidates.find((c) =>
-            [...midLetters].some((ch) => c.contract_id?.includes(ch))
+            [...midLetters].some((ch) => c.contract_id?.slice(2, -4).includes(ch))
           ) || candidates[0];
           existing = best;
         }
@@ -108,6 +119,7 @@ function ScanInner() {
       clearTimeout(timer);
       if (!res.ok) throw new Error("API failed");
       const analyzed = await res.json();
+      if (analyzed.contract_id) analyzed.contract_id = normContractId(analyzed.contract_id);
       setFields(analyzed);
       setStatusMsg("");
       if (await checkMatch(analyzed.contract_id)) return;

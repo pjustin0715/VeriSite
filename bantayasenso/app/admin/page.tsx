@@ -56,11 +56,17 @@ export default function AdminPage() {
       {reports.map((r) => (
         <div key={r.id} className="space-y-2 rounded-xl bg-slate-900 p-3">
           <div className="flex justify-between text-slate-400">
-            <span>{r.kind.toUpperCase()} · Status: <b>{r.status}</b></span>
+            <span>Status: <b>{r.status}</b> · {new Date(r.created_at).toLocaleDateString()}</span>
             <button onClick={() => deleteReport(r.id)} className="text-red-400">Delete</button>
           </div>
           {r.note && <p>{r.note}</p>}
-          {r.ai_flags?.summary && <p className="text-amber-300">AI: {r.ai_flags.summary}</p>}
+          {r.photo_path && (
+            <img
+              src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${r.photo_path}`}
+              alt="report"
+              className="max-h-36 rounded"
+            />
+          )}
           <div className="flex gap-2">
             {["open", "acknowledged", "resolved"].map((st) => (
               <button

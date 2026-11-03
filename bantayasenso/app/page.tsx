@@ -5,7 +5,10 @@ import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import {
   supabase,
   DEMO_CENTER,
-  ensureAnonSession,
+  requireAuth,
+  signInWithOAuth,
+  getUserDisplayName,
+  authorBadge,
   ProjectStatusRow,
   statusCopy,
   buildComplaintMailto,
@@ -28,6 +31,7 @@ export default function HomePage() {
   const [reports, setReports] = useState<any[]>([]);
   const [showNearby, setShowNearby] = useState(false);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number }>(DEMO_CENTER);
+  const [user, setUser] = useState<any>(null);
 
   async function loadProjects() {
     const { data } = await supabase
@@ -66,21 +70,40 @@ export default function HomePage() {
         .addTo(mapRef.current);
     });
 
-    const { data } = await supabase
-      .from("reports")
-      .select("id, kind, note, photo_path, ai_flags, status, admin_response, created_at")
+    let { data, error } = await supabase
+      .from("report_timeline")
+      .select("id, project_id, note, photo_path, status, admin_response, created_at, created_by, author_name, likes, author_total_likes")
       .eq("project_id", p.id)
       .order("created_at", { ascending: false });
+    if (error) {
+      const fallback = await supabase
+        .from("reports")
+        .select("id, project_id, note, photo_path, status, admin_response, created_at")
+        .eq("project_id", p.id)
+        .order("created_at", { ascending: false });
+      data = fallback.data as any;
+    }
     setReports(data || []);
   }
 
   useEffect(() => {
-    ensureAnonSession().catch(() => { });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user?.is_anonymous) {
+        supabase.auth.signOut();
+      } else {
+        setUser(session?.user ?? null);
+      }
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.is_anonymous) return;
+      setUser(session?.user ?? null);
+    });
     loadProjects();
     navigator.geolocation?.getCurrentPosition(
       (pos) => setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => { }
     );
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -187,12 +210,45 @@ export default function HomePage() {
   }, [projects]);
 
   async function confirmProject(p: ProjectStatusRow) {
-    await ensureAnonSession();
+    await requireAuth();
     const { error } = await supabase.from("confirmations").insert({ project_id: p.id });
     if (!error) {
       const updated = { ...p, confirmations: p.confirmations + 1 };
       setSelected(updated);
       setProjects((prev) => prev.map((x) => (x.id === p.id ? updated : x)));
+    }
+  }
+
+  async function likeReport(r: any) {
+    const { user: currentUser } = await requireAuth();
+    const { error } = await supabase.from("report_likes").insert({ report_id: r.id });
+    if (!error) {
+      setReports((prev) =>
+        prev.map((x) =>
+          x.id === r.id
+            ? { ...x, likes: Number(x.likes || 0) + 1, author_total_likes: Number(x.author_total_likes || 0) + 1 }
+            : x.created_by && x.created_by === r.created_by
+            ? { ...x, author_total_likes: Number(x.author_total_likes || 0) + 1 }
+            : x
+        )
+      );
+    } else if (error.code === "23505" && currentUser) {
+      const { error: delErr } = await supabase
+        .from("report_likes")
+        .delete()
+        .eq("report_id", r.id)
+        .eq("user_id", currentUser.id);
+      if (!delErr) {
+        setReports((prev) =>
+          prev.map((x) =>
+            x.id === r.id
+              ? { ...x, likes: Math.max(0, Number(x.likes || 0) - 1), author_total_likes: Math.max(0, Number(x.author_total_likes || 0) - 1) }
+              : x.created_by && x.created_by === r.created_by
+              ? { ...x, author_total_likes: Math.max(0, Number(x.author_total_likes || 0) - 1) }
+              : x
+          )
+        );
+      }
     }
   }
 
@@ -218,22 +274,39 @@ export default function HomePage() {
 
       {/* Top banner + legend */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col gap-2">
-        <div className="pointer-events-auto flex items-center justify-between rounded-xl bg-slate-900/90 px-3 py-2 text-xs shadow-lg backdrop-blur">
-          <div>
+        <div className="pointer-events-auto flex items-center justify-between gap-2 rounded-xl bg-slate-900/90 px-3 py-2 text-xs shadow-lg backdrop-blur">
+          <div className="truncate">
             <span className="font-bold text-sm">BantayAsenso</span>
-            <span className="ml-2 text-slate-300">DPWH Transparency Portal snapshot</span>
+            <span className="ml-2 hidden sm:inline text-slate-300">DPWH Transparency Portal snapshot</span>
           </div>
-          <button
-            onClick={() => setShowNearby((v) => !v)}
-            className="rounded-lg bg-slate-700 px-2.5 py-1 font-medium"
-          >
-            {showNearby ? "Hide Nearby" : "Nearby List"}
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            {user ? (
+              <button
+                onClick={() => supabase.auth.signOut()}
+                className="rounded-lg bg-slate-800 px-2.5 py-1 font-medium text-slate-200"
+              >
+                {getUserDisplayName(user)} · Sign Out
+              </button>
+            ) : (
+              <button
+                onClick={() => signInWithOAuth()}
+                className="rounded-lg bg-emerald-500 px-2.5 py-1 font-semibold text-slate-950"
+              >
+                Sign In
+              </button>
+            )}
+            <button
+              onClick={() => setShowNearby((v) => !v)}
+              className="rounded-lg bg-slate-700 px-2.5 py-1 font-medium"
+            >
+              {showNearby ? "Hide Nearby" : "Nearby List"}
+            </button>
+          </div>
         </div>
         <div className="flex gap-3 self-start rounded-lg bg-slate-900/80 px-2.5 py-1 text-[11px]">
           <span>🟢 On track / Done</span>
           <span>🟡 ≤30d left</span>
-          <span>🔴 Past target / Hazard</span>
+          <span>🔴 Past target</span>
           <span>⚪ Unverified citizen</span>
         </div>
       </div>
@@ -259,18 +332,12 @@ export default function HomePage() {
       )}
 
       {/* Primary Scan FAB */}
-      <div className="absolute inset-x-0 bottom-6 flex justify-center gap-3">
+      <div className="absolute inset-x-0 bottom-6 flex justify-center">
         <Link
           href="/scan?mode=sign"
           className="rounded-full bg-emerald-500 px-6 py-3.5 text-sm font-bold text-slate-950 shadow-xl"
         >
           📷 Scan Sign
-        </Link>
-        <Link
-          href="/scan?mode=hazard"
-          className="rounded-full bg-red-500 px-5 py-3.5 text-sm font-bold text-white shadow-xl"
-        >
-          ⚠️ Report Hazard
         </Link>
       </div>
 
@@ -315,16 +382,10 @@ export default function HomePage() {
               👍 I see this too ({selected.confirmations})
             </button>
             <Link
-              href={`/scan?mode=hazard&project=${selected.id}`}
-              className="rounded-lg bg-red-600 px-3 py-2 font-semibold"
-            >
-              ⚠️ Flag Hazard
-            </Link>
-            <Link
               href={`/scan?mode=update&project=${selected.id}`}
-              className="rounded-lg bg-slate-800 px-3 py-2 font-semibold"
+              className="rounded-lg bg-emerald-500 px-3 py-2 font-semibold text-slate-950"
             >
-              📝 Post Update
+              📸 Add Photo Report
             </Link>
             <a
               href={buildComplaintMailto(selected, typeof window !== "undefined" ? window.location.origin : "")}
@@ -340,37 +401,75 @@ export default function HomePage() {
             </button>
           </div>
 
-          {reports.length > 0 && (
-            <div className="mt-4 space-y-2 border-t border-slate-800 pt-3 text-xs">
-              <div className="font-semibold text-slate-400">Citizen reports ({reports.length})</div>
-              {reports.map((r) => (
-                <div key={r.id} className="rounded-lg bg-slate-800/70 p-2.5">
-                  <div className="flex justify-between text-[11px] text-slate-400">
-                    <span>{r.kind.toUpperCase()} · {r.status}</span>
-                    <span>{new Date(r.created_at).toLocaleDateString()}</span>
-                  </div>
-                  {r.note && <p className="mt-1">{r.note}</p>}
-                  {r.ai_flags?.summary && (
-                    <p className="mt-1 text-amber-300">
-                      AI check: {r.ai_flags.summary} <i>(Automated check, please verify.)</i>
-                    </p>
-                  )}
-                  {r.photo_path && (
-                    <img
-                      src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${r.photo_path}`}
-                      alt="report"
-                      className="mt-2 max-h-40 rounded"
-                    />
-                  )}
-                  {r.admin_response && (
-                    <p className="mt-1.5 rounded bg-emerald-950/80 p-1.5 text-emerald-300">
-                      <b>Official Response:</b> {r.admin_response}
-                    </p>
-                  )}
-                </div>
-              ))}
+          {/* Project Reports / Progress Timeline */}
+          <div className="mt-4 border-t border-slate-800 pt-3 text-xs">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="font-semibold text-slate-300">
+                Project Progress Timeline ({reports.length})
+              </span>
+              <span className="text-[11px] text-slate-400">Earn badges from helpful photo likes</span>
             </div>
-          )}
+
+            {reports.length === 0 ? (
+              <p className="rounded-lg bg-slate-800/50 p-3 text-slate-400">
+                No photo reports yet — upload the first photo to start this project&apos;s timeline.
+              </p>
+            ) : (
+              <div className="relative ml-2 space-y-4 border-l-2 border-slate-700 pl-4">
+                {reports.map((r) => {
+                  const badge = authorBadge(Number(r.author_total_likes || 0));
+                  return (
+                    <div key={r.id} className="relative rounded-xl bg-slate-800/75 p-3">
+                      <span className="absolute -left-[23px] top-3.5 h-3 w-3 rounded-full border-2 border-slate-900 bg-emerald-500" />
+                      <div className="flex flex-wrap items-center justify-between gap-1 text-[11px]">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-semibold text-white">{r.author_name || "Citizen"}</span>
+                          {badge && (
+                            <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-semibold text-amber-300">
+                              {badge}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-slate-400">
+                          {new Date(r.created_at).toLocaleDateString(undefined, {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </div>
+
+                      {r.photo_path && (
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${r.photo_path}`}
+                          alt="Project report"
+                          className="mt-2 max-h-56 w-full rounded-lg object-cover"
+                        />
+                      )}
+
+                      {r.note && <p className="mt-2 text-slate-200">{r.note}</p>}
+
+                      {r.admin_response && (
+                        <p className="mt-2 rounded bg-emerald-950/80 p-2 text-emerald-300">
+                          <b>Official Response:</b> {r.admin_response}
+                        </p>
+                      )}
+
+                      <div className="mt-2.5 flex items-center justify-between">
+                        <button
+                          onClick={() => likeReport(r)}
+                          className="rounded-full bg-slate-700/80 px-3 py-1 text-[11px] font-semibold text-rose-300 hover:bg-slate-700"
+                        >
+                          ❤️ Helpful ({r.likes || 0})
+                        </button>
+                        <span className="text-[10px] uppercase text-slate-500">{r.status}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </main>

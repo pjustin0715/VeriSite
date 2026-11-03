@@ -1,17 +1,24 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase, DEMO_CENTER, ensureAnonSession, normContractId } from "@/lib/supabase";
+import {
+  supabase,
+  DEMO_CENTER,
+  requireAuth,
+  getUserDisplayName,
+  normContractId,
+} from "@/lib/supabase";
 import { normalizePhoto } from "@/lib/image";
 
 function ScanInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const mode = (params.get("mode") || "sign") as "sign" | "hazard" | "update";
+  const mode = params.get("mode") === "update" ? "update" : "sign";
   const presetProjectId = params.get("project");
 
   const [samples, setSamples] = useState<any[]>([]);
   const [blob, setBlob] = useState<Blob | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [coords, setCoords] = useState(DEMO_CENTER);
   const [busy, setBusy] = useState(false);
   const [fields, setFields] = useState<any>(null);
@@ -36,7 +43,6 @@ function ScanInner() {
       .maybeSingle();
 
     if (!existing && cid.length >= 4) {
-      // 1. Check 0 vs O swap at position 2
       const altChar = cid[2] === "0" ? "O" : cid[2] === "O" ? "0" : cid[2];
       const alt = cid.slice(0, 2) + altChar + cid.slice(3);
       if (alt !== cid) {
@@ -49,7 +55,6 @@ function ScanInner() {
       }
     }
 
-    // 2. Fuzzy match: handle dropped letter (e.g. 25D0106) or swapped letters (e.g. 25DO0106)
     if (!existing && cid.length >= 6) {
       const year = cid.slice(0, 2);
       const seq = cid.slice(-4);
@@ -81,13 +86,15 @@ function ScanInner() {
     try {
       const jpeg = await normalizePhoto(rawFile);
       setBlob(jpeg);
+      setPreviewUrl(URL.createObjectURL(jpeg));
       if (mode === "update") {
         setFields({});
+        setStatusMsg("");
         return;
       }
-      const token = await ensureAnonSession();
+      const { token } = await requireAuth();
       const fd = new FormData();
-      fd.append("mode", mode);
+      fd.append("mode", "sign");
       fd.append("image", new File([jpeg], "capture.jpg", { type: "image/jpeg" }));
 
       const ctrl = new AbortController();
@@ -103,14 +110,14 @@ function ScanInner() {
       const analyzed = await res.json();
       setFields(analyzed);
       setStatusMsg("");
-      if (mode === "sign" && (await checkMatch(analyzed.contract_id))) return;
+      if (await checkMatch(analyzed.contract_id)) return;
     } catch {
       if (cannedFallback) {
         setFields(cannedFallback);
         setStatusMsg("Loaded sample preset (offline/timeout fallback).");
-        if (mode === "sign" && (await checkMatch(cannedFallback.contract_id))) return;
+        if (await checkMatch(cannedFallback.contract_id)) return;
       } else {
-        setFields({ contract_id: "", title: "", contractor: "", budget_php: null, target_date: "", concerns: [], summary: "" });
+        setFields({ contract_id: "", title: "", contractor: "", budget_php: null, target_date: "" });
         setStatusMsg("AI unavailable — please fill in details manually.");
       }
     } finally {
@@ -126,9 +133,13 @@ function ScanInner() {
   }
 
   async function handleSave() {
+    if (mode === "update" && !blob) {
+      setStatusMsg("Please take or upload a photo of the project.");
+      return;
+    }
     setBusy(true);
     try {
-      await ensureAnonSession();
+      const { user } = await requireAuth();
       let photoPath: string | null = null;
       if (blob) {
         photoPath = `${crypto.randomUUID()}.jpg`;
@@ -159,7 +170,6 @@ function ScanInner() {
         return;
       }
 
-      // Hazard or Citizen Update
       let targetProjectId = presetProjectId;
       if (!targetProjectId) {
         const { data: near } = await supabase.rpc("nearest_project", {
@@ -174,7 +184,7 @@ function ScanInner() {
             .from("projects")
             .insert({
               source: "citizen",
-              title: "Unverified road work / hazard",
+              title: "Unverified road work",
               lat: coords.lat,
               lng: coords.lng,
             })
@@ -184,13 +194,19 @@ function ScanInner() {
         }
       }
 
-      await supabase.from("reports").insert({
+      const baseReport = {
         project_id: targetProjectId,
-        kind: mode === "hazard" ? "hazard" : "update",
+        kind: "update",
         note: note.slice(0, 500) || null,
         photo_path: photoPath,
-        ai_flags: mode === "hazard" ? fields : null,
+      };
+      const { error: repErr } = await supabase.from("reports").insert({
+        ...baseReport,
+        author_name: getUserDisplayName(user).slice(0, 80),
       });
+      if (repErr) {
+        await supabase.from("reports").insert(baseReport);
+      }
       router.push(`/?project=${targetProjectId}`);
     } finally {
       setBusy(false);
@@ -200,8 +216,12 @@ function ScanInner() {
   return (
     <main className="min-h-dvh bg-slate-950 p-4 text-white text-sm">
       <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold capitalize">{mode} Scanner</h1>
-        <button onClick={() => router.push("/")} className="text-slate-400">Cancel</button>
+        <h1 className="text-lg font-bold">
+          {mode === "sign" ? "Sign Scanner" : "Upload Project Photo Report"}
+        </h1>
+        <button onClick={() => router.push(presetProjectId ? `/?project=${presetProjectId}` : "/")} className="text-slate-400">
+          Cancel
+        </button>
       </div>
 
       <div className="mt-4 flex gap-3">
@@ -226,23 +246,28 @@ function ScanInner() {
         </label>
       </div>
 
-      {/* Sample picker for judges without a printed billboard (F7) */}
-      <div className="mt-4">
-        <div className="text-xs text-slate-400 mb-2">Or try a real sample photo:</div>
-        <div className="flex flex-wrap gap-2">
-          {samples
-            .filter((s) => (mode === "update" ? true : s.mode === mode))
-            .map((s) => (
-              <button
-                key={s.id}
-                onClick={() => pickSample(s)}
-                className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium"
-              >
-                {s.label}
-              </button>
-            ))}
+      {previewUrl && (
+        <img src={previewUrl} alt="Captured preview" className="mt-3 max-h-56 w-full rounded-xl object-cover" />
+      )}
+
+      {mode === "sign" && samples.length > 0 && (
+        <div className="mt-4">
+          <div className="text-xs text-slate-400 mb-2">Or try a real sample photo:</div>
+          <div className="flex flex-wrap gap-2">
+            {samples
+              .filter((s) => s.mode === "sign")
+              .map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => pickSample(s)}
+                  className="rounded-lg bg-slate-800 px-3 py-2 text-xs font-medium"
+                >
+                  {s.label}
+                </button>
+              ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {statusMsg && <p className="mt-3 text-xs text-amber-400">{statusMsg}</p>}
 
@@ -290,30 +315,22 @@ function ScanInner() {
         </div>
       )}
 
-      {fields && mode !== "sign" && (
+      {fields && mode === "update" && (
         <div className="mt-4 space-y-3 rounded-xl bg-slate-900 p-4">
-          {mode === "hazard" && (
-            <div className="rounded bg-amber-950/60 p-3 text-xs text-amber-200">
-              <b>AI Check:</b> {fields.summary || "Checked photo."}
-              <div className="mt-1 opacity-80">
-                Automated check. This might be a problem; please verify. Not an official finding.
-              </div>
-            </div>
-          )}
           <textarea
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={500}
-            placeholder="Add a short note (optional, max 500 chars)..."
+            placeholder="Describe what the project looks like right now (optional, max 500 chars)..."
             className="w-full rounded bg-slate-800 p-2"
             rows={3}
           />
           <button
             disabled={busy}
             onClick={handleSave}
-            className="w-full rounded-lg bg-red-500 py-3 font-bold text-white"
+            className="w-full rounded-lg bg-emerald-500 py-3 font-bold text-slate-950"
           >
-            Submit Report
+            Post Photo Report
           </button>
         </div>
       )}
@@ -328,4 +345,3 @@ export default function ScanPage() {
     </Suspense>
   );
 }
-

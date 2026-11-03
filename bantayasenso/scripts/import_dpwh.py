@@ -4,14 +4,11 @@ import pandas as pd
 import requests
 
 LUZON_REGIONS = {
-    "NATIONAL CAPITAL REGION",
-    "CORDILLERA ADMINISTRATIVE REGION",
     "REGION I",
     "REGION II",
     "REGION III",
     "REGION IV-A",
     "REGION IV-B",
-    "REGION V",
 }
 
 
@@ -86,6 +83,7 @@ def main():
     ap.add_argument("parquet_path")
     ap.add_argument("--province", default="LUZON", help="Province name, LUZON, or ALL")
     ap.add_argument("--as-of", default="2025-11-03", help="YYYY-MM-DD of snapshot")
+    ap.add_argument("--prune-only", action="store_true", help="Only delete DPWH rows outside target regions")
     args = ap.parse_args()
 
     env_file = os.path.join(os.path.dirname(__file__), "..", ".env")
@@ -109,17 +107,38 @@ def main():
 
     df = pd.read_parquet(args.parquet_path)
     records = {}
+    keep_offices = set()
+    drop_offices = set()
     for raw in df.to_dict(orient="records"):
         rec = transform_row(raw, args.province, args.as_of)
         if rec:
             records[rec["contract_id"]] = rec
+            if rec["implementing_office"]:
+                keep_offices.add(rec["implementing_office"])
+        else:
+            raw_rec = transform_row(raw, "ALL", args.as_of)
+            if raw_rec and raw_rec["implementing_office"]:
+                drop_offices.add(raw_rec["implementing_office"])
+
+    session = requests.Session()
+    session.headers.update(headers)
+
+    exclusive_drop = sorted(drop_offices - keep_offices)
+    if exclusive_drop:
+        print(f"Removing DPWH rows from {len(exclusive_drop)} excluded provinces/regions...")
+        del_url = f"{base_url}/rest/v1/projects"
+        for i in range(0, len(exclusive_drop), 20):
+            chunk = exclusive_drop[i : i + 20]
+            in_list = ",".join(f'"{x}"' for x in chunk)
+            session.delete(del_url, params={"source": "eq.dpwh", "implementing_office": f"in.({in_list})"}, timeout=60)
+
+    if args.prune_only:
+        print(f"Pruned to {len(records)} target rows for {args.province}.")
+        return
 
     rows = list(records.values())
     print(f"Uploading {len(rows)} rows for {args.province} (as of {args.as_of})...")
     batches = [(i, rows[i : i + 1000]) for i in range(0, len(rows), 1000)]
-
-    session = requests.Session()
-    session.headers.update(headers)
 
     def upload_batch(item):
         idx, batch = item

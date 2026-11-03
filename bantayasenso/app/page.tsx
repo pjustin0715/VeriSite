@@ -67,7 +67,7 @@ export default function HomePage() {
       .lte("lat", b.north)
       .gte("lng", b.west)
       .lte("lng", b.east)
-      .limit(1000);
+      .limit(300);
     let list = (data || []) as ProjectStatusRow[];
     if (checkUrlParam) {
       const pid = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("project") : null;

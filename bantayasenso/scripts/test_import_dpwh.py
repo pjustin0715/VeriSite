@@ -23,5 +23,6 @@ assert transform_row(valid, "CEBU", "2026-10-15") is None
 top_level_valid = {**valid, "location": None, "province": "Cavite"}
 assert transform_row(top_level_valid, "CAVITE", "2026-10-15") is not None
 assert transform_row({**valid, "region": "Region IV-A"}, "LUZON", "2025-11-03")["source_as_of"] == "2025-11-03"
-assert transform_row({**valid, "region": "Region VII"}, "LUZON", "2025-11-03") is None
+assert transform_row({**valid, "location": None, "region": "National Capital Region"}, "LUZON", "2025-11-03") is None
+assert transform_row({**valid, "location": None, "region": "Region VII"}, "LUZON", "2025-11-03") is None
 print("import_dpwh checks passed.")

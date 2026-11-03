@@ -11,9 +11,10 @@ const textSize = `try{document.documentElement.dataset.text=localStorage.getItem
 
 // Phone-width column with the VeriSite font and page background, shared by every VeriSite screen.
 // Large text: data-text on <html> sets --ts, which the text-14 ... text-xl sizes use (globals.css).
+// shrink-0: <body> is a full-height flex column (globals.css), so without it long pages get squeezed to one screen.
 export default function VeriSiteLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className={`${outfit.className} mx-auto flex min-h-dvh w-full max-w-[480px] flex-col bg-page font-medium text-ink`}>
+    <div className={`${outfit.className} mx-auto flex min-h-dvh w-full max-w-[480px] shrink-0 flex-col bg-page font-medium text-ink`}>
       <script dangerouslySetInnerHTML={{ __html: textSize }} />
       {/* Suspense: the gate reads the path, which dynamic routes (project/[id]) only know at runtime. */}
       <Suspense>

@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
+if (typeof Object.hasOwn !== "function") {
+    Object.hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
+}
+if (typeof globalThis !== "undefined" && typeof globalThis.structuredClone !== "function") {
+    globalThis.structuredClone = (val: any) => JSON.parse(JSON.stringify(val));
+}
+
 export const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -10,17 +17,58 @@ export const DEMO_CENTER = {
     lng: Number(process.env.NEXT_PUBLIC_DEMO_LNG || 120.9367),
 };
 
-export async function ensureAnonSession(): Promise<string> {
+export async function signInWithOAuth() {
+    if (typeof window !== "undefined") {
+        try {
+            const returnPath = window.location.pathname + window.location.search;
+            if (returnPath && returnPath !== "/") sessionStorage.setItem("oauth_return", returnPath);
+        } catch {}
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
+    });
+    if (error) throw error;
+}
+
+export async function requireAuth() {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session?.access_token) return session.access_token;
-    const { data, error } = await supabase.auth.signInAnonymously();
-    if (error || !data.session) throw new Error(error?.message || "Anonymous sign-in failed");
-    return data.session.access_token;
+    if (session?.user && !session.user.is_anonymous) {
+        return { token: session.access_token, user: session.user };
+    }
+    if (session?.user?.is_anonymous) {
+        await supabase.auth.signOut();
+    }
+    await signInWithOAuth();
+    throw new Error("Redirecting to OAuth sign-in...");
+}
+
+export function getUserDisplayName(user: any): string {
+    return (
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        user?.email?.split("@")[0] ||
+        "Citizen"
+    );
+}
+
+export function authorBadge(totalLikes: number): string | null {
+    if (totalLikes <= 0) return null;
+    const icon = totalLikes >= 25 ? "🏆" : totalLikes >= 10 ? "🥈" : totalLikes >= 3 ? "🥉" : "⭐";
+    return `${icon} ${totalLikes} ${totalLikes === 1 ? "person" : "people"} helped`;
 }
 
 export function normContractId(raw?: string | null): string | null {
     const cleaned = (raw || "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-    return cleaned || null;
+    if (!cleaned) return null;
+    if (cleaned.length >= 6) {
+        const year = cleaned.slice(0, 2).replace(/[OD]/g, "0");
+        const mid = cleaned.slice(2, -4);
+        const midFixed = (mid[0] === "0" ? "O" : mid[0] || "") + mid.slice(1);
+        const seq = cleaned.slice(-4).replace(/[OD]/g, "0");
+        return year + midFixed + seq;
+    }
+    return cleaned;
 }
 
 export type ProjectStatusRow = {
@@ -47,7 +95,6 @@ export type ProjectStatusRow = {
 };
 
 export function statusCopy(p: ProjectStatusRow): string {
-    if (p.open_hazards > 0) return `${p.open_hazards} open hazard report(s) from citizens`;
     if (p.source === "citizen") return "Unverified citizen record (not matched to DPWH data)";
     if (p.completed) return "Completed per DPWH";
     if (p.days_to_target === null) return "No target date in DPWH data";
@@ -66,7 +113,7 @@ export function buildComplaintMailto(p: ProjectStatusRow, origin: string): strin
         `Contract ID: ${p.contract_id ?? "Unverified / Not on sign"}`,
         `Contractor (per record): ${p.contractor ?? "N/A"}`,
         `Status on BantayAsenso: ${statusCopy(p)}`,
-        `Citizen confirmations (+1): ${p.confirmations} | Open hazard reports: ${p.open_hazards}`,
+        `Citizen confirmations (+1): ${p.confirmations} | Citizen photo reports: ${p.total_reports}`,
         `Location: https://www.google.com/maps?q=${p.lat},${p.lng}`,
         p.source === "dpwh" && p.contract_id
             ? `DPWH Portal: https://transparency.dpwh.gov.ph/?contractId=${p.contract_id}`

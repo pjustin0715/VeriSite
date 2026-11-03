@@ -3,65 +3,50 @@ import Link from "next/link";
 import { Suspense } from "react";
 import BadgeIcon from "@/components/BadgeIcon";
 import BottomNav from "@/components/BottomNav";
+import ButtonLink from "@/components/ButtonLink";
 import Card from "@/components/Card";
 import Icon from "@/components/Icon";
 import IconButton from "@/components/IconButton";
 import Logo from "@/components/Logo";
 import ProjectCard from "@/components/ProjectCard";
-import { applyFilters, optionsFrom, parseFilters, sorts, statuses, toQuery, type Filters } from "../filters";
+import { applyFilters, noFilters, parseFilters, sorts, toQuery, type Filters } from "../filters";
 import { projects, user } from "../sample-data";
-
-const { types } = optionsFrom(projects);
+import SortMenu from "./SortMenu";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-const chip = "flex h-11 flex-none items-center gap-1 rounded-[22px] px-[15px] text-base font-semibold whitespace-nowrap no-underline shadow-card";
-const chipColor = (on: boolean) => (on ? "bg-primary text-white" : "bg-white text-ink");
+const control = "flex h-11 items-center gap-1.5 rounded-[22px] px-[15px] text-base font-semibold whitespace-nowrap no-underline shadow-card";
 
-function statusLabel(f: Filters) {
-  if (!f.status.length) return "Lahat ng status";
-  return f.status.length === 1 ? statuses[f.status[0]] : `${f.status.length} status`;
-}
-
-// Chips and cards read the filters from the URL, so they render at request time inside <Suspense>.
+// The row and cards read the filters from the URL, so they render at request time inside <Suspense>.
 async function Feed({ searchParams }: { searchParams: SearchParams }) {
   const f = parseFilters(await searchParams);
-  const q = toQuery(f);
   const shown = applyFilters(projects, f);
   const active = f.status.length + f.type.length + (f.near ? 1 : 0);
-  const toggleType = (t: Filters["type"][number]) =>
-    `/verisite/home?${toQuery({ ...f, type: f.type.includes(t) ? f.type.filter((x) => x !== t) : [...f.type, t] })}`;
+  // Sort is not a filter: clearing filters keeps it.
+  const cleared = `/verisite/home?${toQuery({ ...noFilters, sort: f.sort })}`;
 
   return (
     <>
-      <div className="-mt-2 flex gap-2 overflow-x-auto px-5 pt-6 pb-3 [scrollbar-width:none]">
+      <div className="-mt-2 flex items-center justify-between gap-2 px-5 pt-6 pb-3">
         <Link
-          href={`/verisite/filter?${q}`}
-          aria-label={active ? `Buksan ang filter, ${active} ang napili` : "Buksan ang filter"}
-          className={`${chip} relative w-11 justify-center px-0 ${chipColor(active > 0)}`}
+          href={`/verisite/filter?${toQuery(f)}`}
+          aria-label={active ? `Filter, ${active} ang napili` : "Filter"}
+          className={`${control} relative ${active ? "bg-primary text-white" : "bg-white text-ink"}`}
         >
           <Icon name="filter" color={active ? "#FFFFFF" : "#1C86CC"} strokeWidth={2} />
+          Filter
           {active > 0 && (
-            <span className="absolute -top-1 -right-1 flex size-5 items-center justify-center rounded-full bg-lampas text-[13px] font-bold text-white">
-              {active}
-            </span>
+            <span className="flex size-[22px] items-center justify-center rounded-full bg-white text-[14px] font-bold text-link">{active}</span>
           )}
         </Link>
-        <Link href={`/verisite/filter?${q}&show=sort`} className={`${chip} ${chipColor(f.sort !== "bago")}`}>
-          {sorts[f.sort]}
-          <Icon name="chevron" size={17} strokeWidth={2.4} />
-        </Link>
-        <Link href={`/verisite/filter?${q}&show=status`} className={`${chip} ${chipColor(f.status.length > 0)}`}>
-          {statusLabel(f)}
-          <Icon name="chevron" size={17} strokeWidth={2.4} />
-        </Link>
-        {/* One tap turns a project type on or off. */}
-        {(Object.keys(types) as Filters["type"]).map((t) => (
-          <Link key={t} href={toggleType(t)} scroll={false} className={`${chip} ${chipColor(f.type.includes(t))}`}>
-            {f.type.includes(t) && <Icon name="check" size={17} strokeWidth={2.6} />}
-            {types[t]}
-          </Link>
-        ))}
+        <SortMenu
+          label={sorts[f.sort]}
+          options={(Object.keys(sorts) as Filters["sort"][]).map((s) => ({
+            label: sorts[s],
+            href: `/verisite/home?${toQuery({ ...f, sort: s })}`,
+            on: s === f.sort,
+          }))}
+        />
       </div>
 
       <div className="flex flex-col gap-3 px-5">
@@ -69,11 +54,9 @@ async function Feed({ searchParams }: { searchParams: SearchParams }) {
           <ProjectCard key={p.id} project={p} />
         ))}
         {!shown.length && (
-          <Card className="flex flex-col items-center gap-2 p-5 text-center">
-            <p className="text-[17px] font-semibold">Walang proyektong tugma sa napili mo.</p>
-            <Link href="/verisite/home" className="text-base font-bold text-link no-underline">
-              Alisin ang lahat ng filter
-            </Link>
+          <Card className="flex flex-col items-center gap-3 p-5 text-center">
+            <p className="text-[17px] font-semibold">Walang proyektong tugma</p>
+            <ButtonLink href={cleared}>Alisin lahat</ButtonLink>
           </Card>
         )}
       </div>

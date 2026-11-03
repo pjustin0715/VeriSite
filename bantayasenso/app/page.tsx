@@ -80,7 +80,9 @@ export default function HomePage() {
       });
       map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
       mapRef.current = map;
-      renderProjects(map);
+      map.on("load", () => {
+        renderProjects(map);
+      });
     });
 
     return () => {
@@ -177,8 +179,8 @@ export default function HomePage() {
     .slice(0, 15);
 
   return (
-    <main className="relative h-dvh w-screen overflow-hidden bg-slate-900 text-white">
-      <div ref={mapEl} className="h-full w-full" />
+    <main className="relative h-screen w-screen overflow-hidden bg-slate-900 text-white">
+      <div ref={mapEl} className="absolute inset-0 h-full w-full" />
 
       {/* Top banner + legend */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col gap-2">

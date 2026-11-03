@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import maplibregl from "maplibre-gl";
+import type { Map as MapLibreMap, GeoJSONSource } from "maplibre-gl";
 import {
   supabase,
   DEMO_CENTER,
@@ -20,7 +20,7 @@ const COLOR_HEX: Record<ProjectStatusRow["status"], string> = {
 
 export default function HomePage() {
   const mapEl = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
   const [projects, setProjects] = useState<ProjectStatusRow[]>([]);
   const [selected, setSelected] = useState<ProjectStatusRow | null>(null);
   const [reports, setReports] = useState<any[]>([]);
@@ -67,76 +67,87 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!mapEl.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: mapEl.current,
-      style: "https://tiles.openfreemap.org/styles/liberty",
-      center: [DEMO_CENTER.lng, DEMO_CENTER.lat],
-      zoom: 16,
-      pitch: 55,
+    let isMounted = true;
+
+    import("maplibre-gl").then((maplibregl) => {
+      if (!isMounted || !mapEl.current || mapRef.current) return;
+      const map = new maplibregl.Map({
+        container: mapEl.current,
+        style: "https://tiles.openfreemap.org/styles/liberty",
+        center: [DEMO_CENTER.lng, DEMO_CENTER.lat],
+        zoom: 16,
+        pitch: 55,
+      });
+      map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
+      mapRef.current = map;
+      renderProjects(map);
     });
-    map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
-    mapRef.current = map;
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
+
+  function renderProjects(map: MapLibreMap) {
+    const geojson: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: projects.map((p) => ({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+        properties: { id: p.id, color: COLOR_HEX[p.status] },
+      })),
+    };
+    const src = map.getSource("projects") as GeoJSONSource | undefined;
+    if (src) {
+      src.setData(geojson);
+      return;
+    }
+    map.addSource("projects", {
+      type: "geojson",
+      data: geojson,
+      cluster: true,
+      clusterMaxZoom: 14,
+      clusterRadius: 40,
+    });
+    map.addLayer({
+      id: "clusters",
+      type: "circle",
+      source: "projects",
+      filter: ["has", "point_count"],
+      paint: { "circle-color": "#334155", "circle-radius": 18, "circle-stroke-width": 2, "circle-stroke-color": "#fff" },
+    });
+    map.addLayer({
+      id: "cluster-count",
+      type: "symbol",
+      source: "projects",
+      filter: ["has", "point_count"],
+      layout: { "text-field": "{point_count_abbreviated}", "text-size": 12 },
+      paint: { "text-color": "#ffffff" },
+    });
+    map.addLayer({
+      id: "pins",
+      type: "circle",
+      source: "projects",
+      filter: ["!", ["has", "point_count"]],
+      paint: {
+        "circle-color": ["get", "color"],
+        "circle-radius": 11,
+        "circle-stroke-width": 3,
+        "circle-stroke-color": "#ffffff",
+      },
+    });
+    map.on("click", "pins", (e) => {
+      const id = e.features?.[0]?.properties?.id;
+      const hit = projects.find((x) => x.id === id);
+      if (hit) selectProject(hit);
+    });
+  }
 
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
-    const render = () => {
-      const geojson: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: projects.map((p) => ({
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [p.lng, p.lat] },
-          properties: { id: p.id, color: COLOR_HEX[p.status] },
-        })),
-      };
-      const src = map.getSource("projects") as maplibregl.GeoJSONSource | undefined;
-      if (src) {
-        src.setData(geojson);
-        return;
-      }
-      map.addSource("projects", {
-        type: "geojson",
-        data: geojson,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 40,
-      });
-      map.addLayer({
-        id: "clusters",
-        type: "circle",
-        source: "projects",
-        filter: ["has", "point_count"],
-        paint: { "circle-color": "#334155", "circle-radius": 18, "circle-stroke-width": 2, "circle-stroke-color": "#fff" },
-      });
-      map.addLayer({
-        id: "cluster-count",
-        type: "symbol",
-        source: "projects",
-        filter: ["has", "point_count"],
-        layout: { "text-field": "{point_count_abbreviated}", "text-size": 12 },
-        paint: { "text-color": "#ffffff" },
-      });
-      map.addLayer({
-        id: "pins",
-        type: "circle",
-        source: "projects",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-color": ["get", "color"],
-          "circle-radius": 11,
-          "circle-stroke-width": 3,
-          "circle-stroke-color": "#ffffff",
-        },
-      });
-      map.on("click", "pins", (e) => {
-        const id = e.features?.[0]?.properties?.id;
-        const hit = projects.find((x) => x.id === id);
-        if (hit) selectProject(hit);
-      });
-    };
-    if (map.isStyleLoaded()) render();
-    else map.once("load", render);
+    if (map.isStyleLoaded()) renderProjects(map);
+    else map.once("load", () => renderProjects(map));
   }, [projects]);
 
   async function confirmProject(p: ProjectStatusRow) {

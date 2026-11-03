@@ -30,7 +30,7 @@ export async function analyzePhoto(photo: string, site: ProjectRecord): Promise<
     fd.append("image", new File([blob], "capture.jpg", { type: blob.type || "image/jpeg" }));
 
     const ctrl = new AbortController();
-    const timer = setTimeout(() => ctrl.abort(), 12_000);
+    const timer = setTimeout(() => ctrl.abort(), 20_000);
     const res = await fetch("/api/analyze", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -68,8 +68,13 @@ export async function analyzePhoto(photo: string, site: ProjectRecord): Promise<
           warning_light_visible: typeof raw.warning_light_visible === "boolean" ? raw.warning_light_visible : null,
         },
       };
+    } else {
+      const err = await res.json().catch(() => ({}));
+      console.warn("Analyze API responded with error:", res.status, err);
     }
-  } catch {}
+  } catch (e) {
+    console.warn("Analyze request failed or timed out:", e);
+  }
 
   // Offline / API quota fallback so demo never breaks
   return {

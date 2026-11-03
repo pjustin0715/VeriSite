@@ -63,14 +63,24 @@ export async function POST(req: NextRequest) {
   if (!ai) return NextResponse.json({ error: "Gemini API key not configured" }, { status: 503 });
 
   try {
-    const res = await ai.models.generateContent({
-      model: "gemini-2.5-flash-lite",
-      contents: [{ inlineData: { mimeType: file.type, data: b64 } }, prompt],
-      config: {
-        responseMimeType: "application/json",
-        responseSchema: SIGN_SCHEMA,
-      },
-    });
+    let res: any = null;
+    const candidates = ["gemini-3.5-flash-lite", "gemini-flash-lite-latest", "gemini-2.5-flash-lite"];
+    for (const model of candidates) {
+      try {
+        res = await ai.models.generateContent({
+          model,
+          contents: [{ inlineData: { mimeType: file.type, data: b64 } }, prompt],
+          config: {
+            responseMimeType: "application/json",
+            responseSchema: SIGN_SCHEMA,
+          },
+        });
+        if (res?.text) break;
+      } catch (e: any) {
+        console.warn(`Model ${model} failed, trying next:`, e?.message || e);
+      }
+    }
+    if (!res?.text) throw new Error("AI analysis service busy");
     return NextResponse.json(JSON.parse(res.text || "{}"));
   } catch (err: any) {
     console.error("Gemini analyze error:", err?.message || err);

@@ -142,7 +142,8 @@ function ScanInner() {
       const { user } = await requireAuth();
       let photoPath: string | null = null;
       if (blob) {
-        photoPath = `${crypto.randomUUID()}.jpg`;
+        const uid = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        photoPath = `${uid}.jpg`;
         await supabase.storage.from("photos").upload(photoPath, blob, { contentType: "image/jpeg" });
       }
 

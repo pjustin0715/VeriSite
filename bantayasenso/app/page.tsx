@@ -35,26 +35,44 @@ export default function HomePage() {
   const [userPos, setUserPos] = useState<{ lat: number; lng: number }>(DEMO_CENTER);
   const [user, setUser] = useState<any>(null);
 
-  async function loadProjects() {
+  async function loadProjects(
+    bounds?: { south: number; north: number; west: number; east: number },
+    checkUrlParam = false
+  ) {
+    const b = bounds || {
+      south: DEMO_CENTER.lat - 0.15,
+      north: DEMO_CENTER.lat + 0.15,
+      west: DEMO_CENTER.lng - 0.15,
+      east: DEMO_CENTER.lng + 0.15,
+    };
     const { data } = await supabase
       .from("project_status")
-      .select("*");
+      .select("*")
+      .gte("lat", b.south)
+      .lte("lat", b.north)
+      .gte("lng", b.west)
+      .lte("lng", b.east)
+      .limit(1000);
     let list = (data || []) as ProjectStatusRow[];
-    const pid = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("project") : null;
-    if (pid) {
-      let hit = list.find((p) => p.id === pid);
-      if (!hit) {
-        const { data: single } = await supabase
-          .from("project_status")
-          .select("*")
-          .eq("id", pid)
-          .maybeSingle();
-        if (single) {
-          hit = single as ProjectStatusRow;
-          list = [hit, ...list];
+    if (checkUrlParam) {
+      const pid = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("project") : null;
+      if (pid) {
+        let hit = list.find((p) => p.id === pid);
+        if (!hit) {
+          const { data: single } = await supabase
+            .from("project_status")
+            .select("*")
+            .eq("id", pid)
+            .maybeSingle();
+          if (single) {
+            hit = single as ProjectStatusRow;
+            list = [hit, ...list];
+          }
         }
+        if (hit) selectProject(hit);
       }
-      if (hit) selectProject(hit);
+    } else if (selectedRef.current && !list.some((p) => p.id === selectedRef.current!.id)) {
+      list = [selectedRef.current, ...list];
     }
     setProjects(list);
   }
@@ -100,14 +118,16 @@ export default function HomePage() {
       if (session?.user?.is_anonymous) return;
       setUser(session?.user ?? null);
       if (session?.user) {
-        const ret = sessionStorage.getItem("oauth_return");
-        if (ret) {
-          sessionStorage.removeItem("oauth_return");
-          window.location.replace(ret);
-        }
+        try {
+          const ret = sessionStorage.getItem("oauth_return");
+          if (ret) {
+            sessionStorage.removeItem("oauth_return");
+            window.location.replace(ret);
+          }
+        } catch {}
       }
     });
-    loadProjects();
+    loadProjects(undefined, true);
     navigator.geolocation?.getCurrentPosition(
       (pos) => setUserPos({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       () => { }
@@ -119,33 +139,46 @@ export default function HomePage() {
     if (!mapEl.current || mapRef.current) return;
     let isMounted = true;
 
-    import("maplibre-gl").then((maplibregl) => {
-      if (!isMounted || !mapEl.current || mapRef.current) return;
-      maplibregl.setWorkerUrl?.("/maplibre-gl-worker.mjs");
-      const initialCenter = selectedRef.current
-        ? [selectedRef.current.lng, selectedRef.current.lat]
-        : [DEMO_CENTER.lng, DEMO_CENTER.lat];
-      const map = new maplibregl.Map({
-        container: mapEl.current,
-        style: "https://tiles.openfreemap.org/styles/liberty",
-        center: initialCenter as [number, number],
-        zoom: selectedRef.current ? 17 : 16,
-        pitch: 55,
-      });
-      map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
-      mapRef.current = map;
-      map.on("load", () => {
-        renderProjects(map);
-        if (selectedRef.current) {
-          const p = selectedRef.current;
-          map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55, offset: [0, -140] });
-          selectedMarkerRef.current?.remove();
-          selectedMarkerRef.current = new maplibregl.Marker({ color: "#ef4444" })
-            .setLngLat([p.lng, p.lat])
-            .addTo(map);
-        }
-      });
-    });
+    import("maplibre-gl")
+      .then((maplibregl) => {
+        if (!isMounted || !mapEl.current || mapRef.current) return;
+        try {
+          maplibregl.setWorkerUrl?.("/maplibre-gl-worker.js");
+          const initialCenter = selectedRef.current
+            ? [selectedRef.current.lng, selectedRef.current.lat]
+            : [DEMO_CENTER.lng, DEMO_CENTER.lat];
+          const map = new maplibregl.Map({
+            container: mapEl.current,
+            style: "https://tiles.openfreemap.org/styles/liberty",
+            center: initialCenter as [number, number],
+            zoom: selectedRef.current ? 17 : 16,
+            pitch: 55,
+          });
+          map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
+          mapRef.current = map;
+          map.on("load", () => {
+            renderProjects(map);
+            if (selectedRef.current) {
+              const p = selectedRef.current;
+              map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55, offset: [0, -140] });
+              selectedMarkerRef.current?.remove();
+              selectedMarkerRef.current = new maplibregl.Marker({ color: "#ef4444" })
+                .setLngLat([p.lng, p.lat])
+                .addTo(map);
+            }
+          });
+          map.on("moveend", () => {
+            const b = map.getBounds();
+            loadProjects({
+              south: b.getSouth(),
+              north: b.getNorth(),
+              west: b.getWest(),
+              east: b.getEast(),
+            });
+          });
+        } catch {}
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;

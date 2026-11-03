@@ -12,8 +12,10 @@ export const DEMO_CENTER = {
 
 export async function signInWithOAuth() {
     if (typeof window !== "undefined") {
-        const returnPath = window.location.pathname + window.location.search;
-        if (returnPath && returnPath !== "/") sessionStorage.setItem("oauth_return", returnPath);
+        try {
+            const returnPath = window.location.pathname + window.location.search;
+            if (returnPath && returnPath !== "/") sessionStorage.setItem("oauth_return", returnPath);
+        } catch {}
     }
     const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",

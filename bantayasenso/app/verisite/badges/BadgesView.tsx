@@ -36,7 +36,7 @@ export default function BadgesView() {
           <Card className="flex flex-1 flex-col items-center px-2 py-3.5">
             {user.badge ? <BadgeIcon badge={user.badge} size={30} /> : <Icon name="lock" size={30} color="#5F6E74" />}
             <strong className="mt-1 text-2xl font-bold text-link">{user.badge ?? "Wala pa"}</strong>
-            <span className="text-lg font-semibold text-muted">Badge mo</span>
+            <span className="text-lg font-semibold text-muted">Badge</span>
           </Card>
         </div>
 

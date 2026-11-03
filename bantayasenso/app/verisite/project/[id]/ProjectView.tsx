@@ -1,16 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useParams, useSearchParams } from "next/navigation";
-import BadgeIcon from "@/components/BadgeIcon";
+import { useParams, usePathname, useSearchParams } from "next/navigation";
 import ButtonLink from "@/components/ButtonLink";
 import Card from "@/components/Card";
 import Icon, { type IconName } from "@/components/Icon";
 import IconButton from "@/components/IconButton";
 import NotFound from "@/components/NotFound";
+import ReportRow from "@/components/ReportRow";
 import StatusLabel from "@/components/StatusLabel";
 import { today, toggleFollow, useData } from "../../data";
-import { longDate, peso, projectsOf, reportsFor, shortDate, userOf, type Project } from "../../store";
+import { longDate, peso, projectsOf, reportsFor, userOf, type Project } from "../../store";
 
 const summaries: Partial<Record<Project["status"], string>> = {
   lampas: "Lampas na ito sa nakapaskil na petsa. Maaaring may aprubadong dagdag na panahon, kaya tinitingnan pa ng LGU.",
@@ -19,11 +19,11 @@ const summaries: Partial<Record<Project["status"], string>> = {
   tapos: "Tapos na ang proyektong ito.",
 };
 
-const handled = { bago: "Bago", tinitingnan: "Tinitingnan", naaksyunan: "Naaksyunan" };
-
 export default function ProjectView() {
   const { id } = useParams<{ id: string }>();
-  const from = useSearchParams().get("from");
+  const params = useSearchParams();
+  const from = params.get("from");
+  const self = `${usePathname()}${params.size ? `?${params}` : ""}`; // this page, for Back on the report pages
   const data = useData();
   if (!data) return null;
   const p = projectsOf(data, today()).find((x) => x.id === id);
@@ -99,35 +99,15 @@ export default function ProjectView() {
         <Card className="px-4 pt-[13px] pb-1">
           <h2 className="text-lg font-bold">{p.reportCount} na report</h2>
           {!reports.length && <p className="py-3 text-base text-muted">Wala pang report na maipapakita.</p>}
-          {reports.map((r) => (
-            <div key={r.id} className="flex items-start gap-3 border-b border-line py-3 last:border-0">
-              <Image
-                src={r.photo}
-                alt="Litrato ng report"
-                width={152}
-                height={152}
-                unoptimized={r.photo.startsWith("data:")}
-                className="size-[76px] flex-none rounded-[14px] object-cover"
-              />
-              <span className="min-w-0 grow">
-                <span className="flex items-center gap-[5px] text-base leading-[1.2] font-bold">
-                  {r.user}
-                  <BadgeIcon badge={r.badge} size={22} />
-                </span>
-                <span className="mt-0.5 line-clamp-2 text-15 leading-[1.3]">{r.note || r.issues.join(", ")}</span>
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-14 text-muted">
-                  {shortDate(r.createdAt)} • {handled[r.status ?? "bago"]}
-                  {r.confirmed && (
-                    <span className="inline-flex items-center gap-0.5 font-semibold text-[#1E7A50]">
-                      <Icon name="check" size={15} color="#2E9E6B" strokeWidth={2.8} />
-                      Kumpirmado
-                    </span>
-                  )}
-                </span>
-              </span>
-            </div>
+          {reports.slice(0, 3).map((r) => (
+            <ReportRow key={r.id} report={r} back={self} />
           ))}
         </Card>
+        {reports.length > 3 && (
+          <ButtonLink href={`/verisite/project/${p.id}/reports?back=${encodeURIComponent(self)}`} variant="white">
+            Tingnan lahat ng report ({reports.length})
+          </ButtonLink>
+        )}
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-[480px] rounded-t-3xl bg-white px-5 pt-3 pb-[max(30px,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(20,80,120,.12)]">

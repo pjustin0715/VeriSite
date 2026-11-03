@@ -7,6 +7,7 @@ export default function IconButton({
   href,
   onClick,
   pressed,
+  autoFocus,
   icon,
   label,
   children,
@@ -14,6 +15,7 @@ export default function IconButton({
   href?: string;
   onClick?: () => void;
   pressed?: boolean;
+  autoFocus?: boolean; // buttons only, e.g. Close in a photo viewer
   icon?: IconName;
   label: string;
   children?: React.ReactNode;
@@ -31,7 +33,7 @@ export default function IconButton({
       {content}
     </Link>
   ) : (
-    <button type="button" onClick={onClick} aria-label={label} aria-pressed={pressed} className={className}>
+    <button type="button" onClick={onClick} autoFocus={autoFocus} aria-label={label} aria-pressed={pressed} className={className}>
       {content}
     </button>
   );

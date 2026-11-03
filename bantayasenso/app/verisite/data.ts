@@ -4,7 +4,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { AiResult } from "./ai";
 import { sample } from "./sample-data";
-import { addReport, seedState, toggleFollowed, type Report, type State } from "./store";
+import { addReport, confirmReports, seedState, setSiteStatus, toggleFollowed, upgrade, type Report, type ReportStatus, type State } from "./store";
 
 const KEY = "verisite:v1";
 const CHANGED = "verisite:changed";
@@ -37,7 +37,7 @@ function load(): State {
   try {
     const s = raw && JSON.parse(raw);
     // Stored data is untrusted: anything unexpected falls back to a fresh start.
-    if (s?.version === 1 && Array.isArray(s.projects) && Array.isArray(s.reports) && Array.isArray(s.updates) && s.user) state = s;
+    if ((s?.version === 1 || s?.version === 2) && Array.isArray(s.projects) && Array.isArray(s.reports) && Array.isArray(s.updates) && s.user) state = upgrade(s, sample);
   } catch {}
   if (!state) {
     state = seedState(sample, today());
@@ -80,6 +80,16 @@ export async function sendReport(input: Pick<Report, "projectId" | "photo" | "is
 
 export async function toggleFollow(projectId: string) {
   save(toggleFollowed(load(), projectId));
+}
+
+// LGU actions on a site (LGUDetail). Both skip saving when nothing changes, so a double tap is harmless.
+export async function setStatus(projectId: string, status: ReportStatus) {
+  const next = setSiteStatus(load(), projectId, status);
+  if (next !== load()) save(next);
+}
+export async function confirmSite(projectId: string) {
+  const next = confirmReports(load(), projectId);
+  if (next !== load()) save(next);
 }
 
 // Saved reports keep a small copy of the photo so localStorage (about 5 MB) holds many reports.

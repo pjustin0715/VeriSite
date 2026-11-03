@@ -10,6 +10,7 @@ export default function PageHeader({
   title,
   subtitle,
   right,
+  narrow,
   children,
 }: {
   image?: "head-plain" | "head-happy" | "head-scan" | "head-walk" | "head-worry";
@@ -18,6 +19,7 @@ export default function PageHeader({
   title: React.ReactNode;
   subtitle?: string;
   right?: React.ReactNode; // e.g. a bookmark IconButton
+  narrow?: boolean; // wrap the subtitle clear of a mascot on the right (head-scan)
   children: React.ReactNode;
 }) {
   return (
@@ -29,7 +31,7 @@ export default function PageHeader({
           {right}
         </div>
         <h1 className="mt-2.5 text-[28px] font-bold leading-[1.12] tracking-[-0.5px] [text-shadow:0px_1px_5px_#00000033]">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-base leading-[1.3]">{subtitle}</p>}
+        {subtitle && <p className={`mt-0.5 text-base leading-[1.3] ${narrow ? "max-w-[205px]" : ""}`}>{subtitle}</p>}
       </div>
       <section className="relative mt-5 flex flex-col gap-2.5 rounded-t-sheet bg-page px-5 pt-5 pb-[max(34px,env(safe-area-inset-bottom))]">
         {children}

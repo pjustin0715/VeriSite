@@ -31,8 +31,22 @@ export type ProjectRecord = {
   progress: number; // percent done
   record: string; // contractor's track record, e.g. "2 sa 6 ang lampas"
   reportCount: number;
+  lng: number; // shortcut: fictional sample coordinates; the real DPWH/LGU feed brings the true location
+  lat: number;
 };
-export type Project = ProjectRecord & { status: Status; daysLate: number; urgency: number };
+
+// How the LGU is handling a report. A site's status is its least-handled report, so a new report reopens it.
+export type ReportStatus = "bago" | "tinitingnan" | "naaksyunan";
+export type Score = { reports: number; hazard: number; late: number; total: number; level: "Mataas" | "Katamtaman" | "Mababa"; topHazard: string | null };
+export type Project = ProjectRecord & {
+  status: Status;
+  daysLate: number;
+  urgency: number;
+  score: Score;
+  siteStatus: ReportStatus;
+  reportsShown: number; // reports saved here (reportCount also counts older ones not in this app)
+  unconfirmed: number;
+};
 
 export type Report = {
   id: string; // e.g. VS-2026-1147
@@ -44,12 +58,14 @@ export type Report = {
   issues: string[]; // what was checked, e.g. ["Halaga", "Bukas na hukay"]
   note: string;
   draftId?: string; // the scan it came from; sending the same scan twice returns the first report
+  status?: ReportStatus; // missing = "bago" (saved before LGU statuses existed)
+  confirmed?: boolean;
 };
 
 export type Update = { id: string; projectId: string; text: string; createdAt: string; read: boolean };
 
 export type State = {
-  version: 1;
+  version: 2;
   user: { username: string; reportCount: number; streak: number; lastReportDay: string | null; followed: string[] };
   projects: ProjectRecord[];
   reports: Report[];
@@ -70,14 +86,31 @@ export const longDate = (d: string) => asDate(d).toLocaleDateString("fil-PH", { 
 const badgeFor = (reportCount: number): BadgeName | null => badges.findLast((b) => reportCount >= b.min)?.name ?? null;
 const badgeRank = (b: BadgeName) => badges.findIndex((x) => x.name === b);
 
+// Hazards found in reports, with their weight in the urgency score (labels from the Result screen), heaviest first.
+export const hazards: Record<string, number> = { "Bukas na hukay": 20, "Walang harang": 10, "Walang ilaw": 5 };
+const statusOrder: ReportStatus[] = ["bago", "tinitingnan", "naaksyunan"];
+
+// Urgency 0-100 = reports (max 45, full at 15) + hazards in reports not yet acted on (max 35) + days late (max 20, full at 30).
+// It only ranks sites for attention; it is not a promise of LGU action.
+export function scoreOf(reportCount: number, open: Report[], daysLate: number): Score {
+  const found = Object.keys(hazards).filter((h) => open.some((r) => r.issues.includes(h)));
+  const reports = Math.round((45 * Math.min(reportCount, 15)) / 15);
+  const hazard = Math.min(35, found.reduce((sum, h) => sum + hazards[h], 0));
+  const late = Math.round((20 * Math.min(Math.max(daysLate, 0), 30)) / 30);
+  const total = reports + hazard + late;
+  return { reports, hazard, late, total, level: total >= 70 ? "Mataas" : total >= 40 ? "Katamtaman" : "Mababa", topHazard: found[0] ?? null };
+}
+
 export function projectsOf(s: State, today: string): Project[] {
   return s.projects
     .map((p) => {
       const daysLate = p.progress < 100 ? -daysBetween(today, p.targetDate) : 0;
       const status: Status = p.progress >= 100 ? "tapos" : daysLate > 0 ? "lampas" : daysLate >= -30 ? "malapit" : "ayon";
-      // shortcut: simple urgency score (reports + days late); replace with the LGU priority formula when it exists.
-      const urgency = Math.min(99, 10 + p.reportCount * 3 + Math.max(0, daysLate));
-      return { ...p, status, daysLate, urgency };
+      const mine = s.reports.filter((r) => r.projectId === p.id);
+      const siteStatus = statusOrder[Math.min(2, ...mine.map((r) => statusOrder.indexOf(r.status ?? "bago")))];
+      const score = scoreOf(p.reportCount, mine.filter((r) => r.status !== "naaksyunan"), daysLate);
+      const unconfirmed = mine.filter((r) => !r.confirmed).length;
+      return { ...p, status, daysLate, score, urgency: score.total, siteStatus: mine.length ? siteStatus : "bago", reportsShown: mine.length, unconfirmed };
     })
     .sort((a, b) => b.postedAt.localeCompare(a.postedAt)); // newest first; filters.ts relies on this
 }
@@ -112,6 +145,8 @@ export function addReport(s: State, input: Pick<Report, "projectId" | "photo" | 
     user: s.user.username,
     badge: badgeFor(reportCount)!,
     createdAt: now.toISOString(),
+    status: "bago",
+    confirmed: false,
   };
   return {
     report,
@@ -123,6 +158,24 @@ export function addReport(s: State, input: Pick<Report, "projectId" | "photo" | 
       nextReportNo: s.nextReportNo + 1,
     },
   };
+}
+
+// Priority list: most urgent first; sites whose reports are all acted on go last.
+export const priorityOf = (projects: Project[]) =>
+  projects.toSorted((a, b) => +(a.siteStatus === "naaksyunan") - +(b.siteStatus === "naaksyunan") || b.urgency - a.urgency);
+
+// LGU sets how a site's reports are handled (Bago, Tinitingnan, Tapos). Returns the same state when nothing changes.
+export function setSiteStatus(s: State, projectId: string, status: ReportStatus): State {
+  if (!statusOrder.includes(status)) throw new Error("Unknown status");
+  const mine = s.reports.filter((r) => r.projectId === projectId);
+  if (!mine.length || mine.every((r) => (r.status ?? "bago") === status)) return s;
+  return { ...s, reports: s.reports.map((r) => (r.projectId === projectId ? { ...r, status } : r)) };
+}
+
+// Confirms the site's unconfirmed reports. Doing it again changes nothing.
+export function confirmReports(s: State, projectId: string): State {
+  if (!s.reports.some((r) => r.projectId === projectId && !r.confirmed)) return s;
+  return { ...s, reports: s.reports.map((r) => (r.projectId === projectId ? { ...r, confirmed: true } : r)) };
 }
 
 export const toggleFollowed = (s: State, id: string): State => ({
@@ -162,10 +215,17 @@ export type Sample = {
   updates: { projectId: string; text: string; daysAgo: number }[];
 };
 
+// Version 1 saved data had no map coordinates: take them from the sample (same ids), else the map center.
+export function upgrade(s: Omit<State, "version"> & { version: number }, sample: Sample): State {
+  if (s.version === 2) return s as State;
+  const at = (id: string) => sample.projects.find((p) => p.id === id) ?? { lng: 120.945, lat: 14.32 };
+  return { ...s, version: 2, projects: s.projects.map((p) => ({ ...p, lng: p.lng ?? at(p.id).lng, lat: p.lat ?? at(p.id).lat })) };
+}
+
 export function seedState(sample: Sample, today: string): State {
   const { lastReport, ...user } = sample.user;
   return {
-    version: 1,
+    version: 2,
     user: { ...user, lastReportDay: addDays(today, lastReport) },
     projects: sample.projects.map(({ start, target, posted, ...p }) => ({
       ...p,

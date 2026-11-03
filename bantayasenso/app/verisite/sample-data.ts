@@ -9,22 +9,22 @@ export const sample: Sample = {
     {
       id: "burol", name: "Kalsada sa Burol", place: "Burol Main", address: "Brgy. Burol Main, Dasmariñas", image: "road", type: "kalsada", near: true,
       contractId: "26KC0011", contractor: "Sample Road Works Co.", office: "Sample District Office", budget: 3_200_000,
-      start: -60, target: 20, posted: -2, progress: 18, record: "0 sa 3 ang lampas", reportCount: 2,
+      start: -60, target: 20, posted: -2, progress: 18, record: "0 sa 3 ang lampas", reportCount: 2, lng: 120.9198, lat: 14.3136,
     },
     {
       id: "salawag", name: "Tulay sa Salawag", place: "Salawag Rd", address: "Brgy. Salawag, Dasmariñas", image: "bridge", type: "tulay", near: true,
       contractId: "26KC0027", contractor: "Sample Bridge Builders", office: "Sample District Office", budget: 12_500_000,
-      start: -40, target: 150, posted: -6, progress: 25, record: "1 sa 8 ang lampas", reportCount: 0,
+      start: -40, target: 150, posted: -6, progress: 25, record: "1 sa 8 ang lampas", reportCount: 0, lng: 120.963, lat: 14.3332,
     },
     {
       id: "aguinaldo", name: "Kanal sa Aguinaldo", place: "Salitran II", address: "Brgy. Salitran II, Dasmariñas", image: "drain", type: "kanal", near: false,
       contractId: "26KC0042", contractor: "Sample Builders Inc.", office: "Sample District Office", budget: 4_850_000,
-      start: -292, target: -30, posted: -14, progress: 65, record: "2 sa 6 ang lampas", reportCount: 14,
+      start: -292, target: -30, posted: -14, progress: 65, record: "2 sa 6 ang lampas", reportCount: 14, lng: 120.9213, lat: 14.3365,
     },
     {
       id: "paliparan", name: "Kalsada sa Paliparan", place: "Paliparan III", address: "Brgy. Paliparan III, Dasmariñas", image: "road", type: "kalsada", near: false,
       contractId: "26KC0008", contractor: "Sample Paving Corp.", office: "Sample District Office", budget: 2_750_000,
-      start: -200, target: -25, posted: -22, progress: 100, record: "0 sa 4 ang lampas", reportCount: 3,
+      start: -200, target: -25, posted: -22, progress: 100, record: "0 sa 4 ang lampas", reportCount: 3, lng: 120.9339, lat: 14.323,
     },
   ],
   reports: [

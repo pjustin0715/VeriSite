@@ -30,7 +30,8 @@ Citizens scan a project's paskil or site. AI flags wrong billboard information a
 - Link the screens together following the links in `screens/*.html`, unless the behavior rules say otherwise.
 
 ## Unfinished (links may lead to a missing page)
-- Screens: Login, Signup, Verify (Welcome goes straight to Home for now), Map, Priority, LGUDetail, Profile, Badges, MyReports, Updates.
+- Screens: Login, Signup, Verify (Welcome goes straight to Home for now), Profile, Badges, MyReports, Updates.
+- LGUDetail has no LGU-only access yet: anyone can change statuses until login and roles exist.
 - Location: "Malapit sa akin" and project matching don't use GPS yet.
 
 ## Git

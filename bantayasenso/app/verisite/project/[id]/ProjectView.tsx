@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import BadgeIcon from "@/components/BadgeIcon";
 import ButtonLink from "@/components/ButtonLink";
 import Card from "@/components/Card";
 import Icon, { type IconName } from "@/components/Icon";
 import IconButton from "@/components/IconButton";
+import NotFound from "@/components/NotFound";
 import StatusLabel from "@/components/StatusLabel";
 import { today, toggleFollow, useData } from "../../data";
 import { longDate, peso, projectsOf, reportsFor, shortDate, type Project } from "../../store";
@@ -18,20 +19,17 @@ const summaries: Partial<Record<Project["status"], string>> = {
   tapos: "Tapos na ang proyektong ito.",
 };
 
+const handled = { bago: "Bago", tinitingnan: "Tinitingnan", naaksyunan: "Naaksyunan" };
+
 export default function ProjectView() {
   const { id } = useParams<{ id: string }>();
+  const from = useSearchParams().get("from");
   const data = useData();
   if (!data) return null;
   const p = projectsOf(data, today()).find((x) => x.id === id);
-
-  if (!p) {
-    return (
-      <main className="flex grow flex-col justify-center gap-4 px-5 text-center">
-        <h1 className="text-[27px] font-bold">Hindi nakita ang proyekto</h1>
-        <ButtonLink href="/verisite/home">Bumalik sa Simula</ButtonLink>
-      </main>
-    );
-  }
+  if (!p) return <NotFound />;
+  // Back returns to the screen that opened this project (Map, LGU detail), else Home.
+  const back = from === "map" ? `/verisite/map?p=${p.id}` : from === "lgu" ? `/verisite/lgu/${p.id}` : "/verisite/home";
 
   const followed = data.user.followed.includes(p.id);
   const reports = reportsFor(data, p.id);
@@ -50,7 +48,7 @@ export default function ProjectView() {
         <Image src={`/verisite/${p.image}.png`} alt="" fill preload sizes="480px" className="object-cover object-bottom" />
         <div className="absolute inset-0 bg-linear-to-b from-[rgba(15,40,60,.62)] via-[rgba(15,40,60,0)] via-38% to-[rgba(15,40,60,.82)] to-92%" />
         <div className="absolute inset-x-5 top-[max(52px,env(safe-area-inset-top))] flex justify-between">
-          <IconButton href="/verisite/home" icon="back" label="Bumalik" />
+          <IconButton href={back} icon="back" label="Bumalik" />
           <IconButton onClick={() => toggleFollow(p.id)} pressed={followed} label={followed ? "Huwag nang sundan" : "Sundan ang proyekto"}>
             <Icon name="bookmark" size={23} fill={followed ? "#1C86CC" : "none"} color={followed ? "#1C86CC" : "currentColor"} />
           </IconButton>
@@ -110,7 +108,15 @@ export default function ProjectView() {
                   <BadgeIcon badge={r.badge} size={22} />
                 </span>
                 <span className="mt-0.5 line-clamp-2 text-[15px] leading-[1.3]">{r.note || r.issues.join(", ")}</span>
-                <span className="mt-0.5 block text-[14px] text-muted">{shortDate(r.createdAt)}</span>
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[14px] text-muted">
+                  {shortDate(r.createdAt)} • {handled[r.status ?? "bago"]}
+                  {r.confirmed && (
+                    <span className="inline-flex items-center gap-0.5 font-semibold text-[#1E7A50]">
+                      <Icon name="check" size={15} color="#2E9E6B" strokeWidth={2.8} />
+                      Kumpirmado
+                    </span>
+                  )}
+                </span>
               </span>
             </div>
           ))}

@@ -24,6 +24,14 @@ const paths = {
     </>
   ),
   chevron: <path d="M6 9l6 6 6-6" />,
+  next: <path d="M9 6l6 6-6 6" />,
+  search: (
+    <>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-4-4" />
+    </>
+  ),
+  list: <path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01" />,
   check: <path d="M5 12l5 5 9-10" />,
   clock: (
     <>

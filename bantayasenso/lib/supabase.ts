@@ -41,11 +41,9 @@ export function getUserDisplayName(user: any): string {
 }
 
 export function authorBadge(totalLikes: number): string | null {
-    if (totalLikes >= 25) return "🏆 Gold Bantay";
-    if (totalLikes >= 10) return "🥈 Silver Bantay";
-    if (totalLikes >= 3) return "🥉 Bronze Bantay";
-    if (totalLikes >= 1) return "⭐ Helpful Citizen";
-    return null;
+    if (totalLikes <= 0) return null;
+    const icon = totalLikes >= 25 ? "🏆" : totalLikes >= 10 ? "🥈" : totalLikes >= 3 ? "🥉" : "⭐";
+    return `${icon} ${totalLikes} ${totalLikes === 1 ? "person" : "people"} helped`;
 }
 
 export function normContractId(raw?: string | null): string | null {

@@ -8,8 +8,10 @@ import Icon from "@/components/Icon";
 import IconButton from "@/components/IconButton";
 import Logo from "@/components/Logo";
 import ProjectCard from "@/components/ProjectCard";
-import { applyFilters, parseFilters, sorts, statuses, toQuery, types, type Filters } from "../filters";
+import { applyFilters, optionsFrom, parseFilters, sorts, statuses, toQuery, type Filters } from "../filters";
 import { projects, user } from "../sample-data";
+
+const { types } = optionsFrom(projects);
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

@@ -3,15 +3,18 @@ import { Suspense } from "react";
 import ButtonLink from "@/components/ButtonLink";
 import Icon from "@/components/Icon";
 import HomePage from "../home/page";
-import { noFilters, parseFilters, sorts, statuses, toQuery, types, type Filters } from "../filters";
+import { optionsFrom, parseFilters, sorts, toQuery, type Filters } from "../filters";
+import { projects } from "../sample-data";
+import ClearButton from "./ClearButton";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 type Group = "sort" | "status" | "type" | "near";
 
+const { statuses, types } = optionsFrom(projects);
 const groups: { key: Group; title: string; options: Record<string, string>; multi: boolean }[] = [
   { key: "sort", title: "Ayusin ayon sa", options: sorts, multi: false },
-  { key: "status", title: "Status", options: statuses, multi: true },
-  { key: "type", title: "Uri ng proyekto", options: types, multi: true },
+  { key: "status", title: "Status", options: statuses as Record<string, string>, multi: true },
+  { key: "type", title: "Uri ng proyekto", options: types as Record<string, string>, multi: true },
   { key: "near", title: "Lugar", options: { "1": "Malapit sa akin" }, multi: true },
 ];
 
@@ -26,13 +29,11 @@ async function Sheet({ searchParams }: { searchParams: SearchParams }) {
   const params = await searchParams;
   const f = parseFilters(params);
   const show = groups.find((g) => g.key === params.show)?.key;
-  // "Alisin lahat" clears only what the sheet shows, so the hidden groups keep their picks.
-  const cleared: Filters = show ? { ...f, [show]: noFilters[show] } : noFilters;
 
   return (
     <>
       <Link href={`/verisite/home?${toQuery(f)}`} aria-label="Isara ang filter" className="fixed inset-0 z-20 bg-[rgba(8,30,28,.55)]" />
-      {/* key: remount when the URL changes so the unmanaged checkboxes pick up new defaults (e.g. after "Alisin lahat"). */}
+      {/* key: remount when the URL changes so the unmanaged checkboxes pick up new defaults (e.g. Home chip -> sheet). */}
       <form
         key={`${toQuery(f)}&${show}`}
         action="/verisite/home"
@@ -45,14 +46,7 @@ async function Sheet({ searchParams }: { searchParams: SearchParams }) {
             <h1 id="filter-title" className="text-[26px] font-bold tracking-[-0.4px]">
               {show ? groups.find((g) => g.key === show)?.title : "I-filter ang balita"}
             </h1>
-            <Link
-              href={`/verisite/filter?${toQuery(cleared)}${show ? `&show=${show}` : ""}`}
-              replace
-              scroll={false}
-              className="text-base font-bold whitespace-nowrap text-link no-underline"
-            >
-              Alisin lahat
-            </Link>
+            <ClearButton />
           </div>
           <p className="mt-1 text-[15px] text-muted">Puwedeng pumili ng marami. Kapag walang pinili, ipapakita ang lahat.</p>
           <div className="mt-4 flex flex-col gap-4 pb-4">
@@ -72,12 +66,10 @@ async function Sheet({ searchParams }: { searchParams: SearchParams }) {
                         defaultChecked={isPicked(f, g.key, value)}
                         className="peer sr-only"
                       />
-                      {/* Check mark on picked multi-select chips, so "picked" isn't shown by color alone. */}
-                      {g.multi && (
-                        <span className="hidden peer-checked:block">
-                          <Icon name="check" size={17} strokeWidth={2.6} />
-                        </span>
-                      )}
+                      {/* Check mark on every picked chip, so "picked" isn't shown by color alone. */}
+                      <span className="hidden peer-checked:block">
+                        <Icon name="check" size={17} strokeWidth={2.6} />
+                      </span>
                       {label}
                     </label>
                   ))}

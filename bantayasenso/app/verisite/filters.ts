@@ -40,6 +40,15 @@ export function toQuery(f: Filters) {
   return q.toString();
 }
 
+// Only offer options that some project in the shared data actually has, in the order above.
+export function optionsFrom(projects: Project[]) {
+  const has = (key: "status" | "type", v: string) => projects.some((p) => p[key] === v);
+  return {
+    statuses: Object.fromEntries(Object.entries(statuses).filter(([v]) => has("status", v))) as Partial<typeof statuses>,
+    types: Object.fromEntries(Object.entries(types).filter(([v]) => has("type", v))) as Partial<typeof types>,
+  };
+}
+
 export function applyFilters(projects: Project[], f: Filters) {
   const shown = projects.filter(
     (p) =>

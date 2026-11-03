@@ -1,7 +1,7 @@
 // Run: node --test app/verisite/filters.test.mjs (Node 23.6+ loads the .ts file directly).
 import assert from "node:assert/strict";
 import test from "node:test";
-import { applyFilters, noFilters, parseFilters, toQuery } from "./filters.ts";
+import { applyFilters, noFilters, optionsFrom, parseFilters, toQuery } from "./filters.ts";
 
 const projects = [
   { id: "a", status: "malapit", type: "kalsada", near: true, reports: 2 },
@@ -33,4 +33,10 @@ test("URL round trip drops unknown values and defaults", () => {
   assert.deepEqual(parseFilters(Object.fromEntries(new URLSearchParams(toQuery(f)))), { ...f, status: ["lampas"] });
   assert.equal(toQuery(noFilters), "");
   assert.deepEqual(parseFilters({ sort: "x" }), noFilters);
+});
+
+test("options come from the data", () => {
+  const o = optionsFrom(projects);
+  assert.deepEqual(Object.keys(o.types), ["kalsada", "tulay", "kanal"]);
+  assert.deepEqual(Object.keys(o.statuses), ["lampas", "malapit", "ayon", "tapos"]);
 });

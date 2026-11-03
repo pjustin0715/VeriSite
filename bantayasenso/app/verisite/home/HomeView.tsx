@@ -90,8 +90,9 @@ export default function HomeView() {
       </div>
 
       <div className="flex flex-col gap-3 px-5">
-        {shown?.map((p, i) => (
-          <ProjectCard key={p.id} project={p} eager={i === 0} />
+        {/* Cards sharing the first card's picture load eagerly too: Next's LCP check looks images up by src. */}
+        {shown?.map((p) => (
+          <ProjectCard key={p.id} project={p} eager={p.image === shown[0].image} />
         ))}
         {shown && !shown.length && (
           <Card className="flex flex-col items-center gap-3 p-5 text-center">

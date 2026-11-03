@@ -132,7 +132,6 @@ export function userOf(s: State, today: string) {
   const unread = s.updates.filter((u) => u.user === a.username && !u.read).length;
   return { username: a.username, mobile: a.mobile, followed: a.followed, reportCount, streak: alive ? a.streak : 0, badge: badgeFor(reportCount), unread };
 }
-export type User = NonNullable<ReturnType<typeof userOf>>;
 
 // Updates for the logged-in account, newest first.
 export const updatesOf = (s: State) => s.updates.filter((u) => u.user === s.me).sort((a, b) => b.createdAt.localeCompare(a.createdAt));

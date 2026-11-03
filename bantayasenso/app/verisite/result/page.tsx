@@ -246,7 +246,10 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
         )}
         <div className="grid grid-cols-[1fr_1.35fr] gap-2.5">
           <ButtonLink href="/verisite/home" variant="white" onClick={clearDraft}>
-            Huwag <span className="whitespace-nowrap">i-report</span>
+            {/* One span: as separate flex items, the space before "i-report" would be dropped. */}
+            <span>
+              Huwag <span className="whitespace-nowrap">i-report</span>
+            </span>
           </ButtonLink>
           <ButtonLink disabled={saving}>{saving ? "Ipinapadala..." : "I-report sa LGU"}</ButtonLink>
         </div>

@@ -47,7 +47,7 @@ export default function BadgesView() {
                 <span>
                   {next.min - count} report pa bago maging {next.name}
                 </span>
-                <span className="text-xl text-link">
+                <span className="text-xl whitespace-nowrap text-link">
                   {count} / {next.min}
                 </span>
               </p>

@@ -39,9 +39,8 @@ export default function WelcomePage() {
       </div>
 
       <div className="absolute inset-x-5 bottom-[max(34px,env(safe-area-inset-bottom))] flex flex-col gap-2.5">
-        {/* shortcut: Signup and Login aren't built yet, so both go straight to Home; point them at /verisite/signup and /verisite/login once those exist. */}
-        <ButtonLink href="/verisite/home">Gumawa ng account</ButtonLink>
-        <ButtonLink href="/verisite/home" variant="white">
+        <ButtonLink href="/verisite/signup">Gumawa ng account</ButtonLink>
+        <ButtonLink href="/verisite/login" variant="white">
           Mag-login
         </ButtonLink>
       </div>

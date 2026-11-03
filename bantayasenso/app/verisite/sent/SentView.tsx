@@ -13,9 +13,10 @@ import { userOf } from "../store";
 export default function SentView() {
   const id = useSearchParams().get("id");
   const data = useData();
-  if (!data) return null;
-  const report = data.reports.find((r) => r.id === id);
-  const user = userOf(data, today());
+  const user = data && userOf(data, today());
+  if (!data || !user) return null;
+  // Only the sender's own report: an old or someone else's link shows "not found".
+  const report = data.reports.find((r) => r.id === id && r.user === user.username);
 
   return (
     <main className="flex grow flex-col bg-[#57B5EE]">

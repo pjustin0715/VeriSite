@@ -43,7 +43,11 @@ export default function HomeView() {
             {user?.streak}
           </Link>
           <IconButton href="/verisite/updates" icon="bell" label={user?.unread ? `Mga update, ${user.unread} bago` : "Mga update"}>
-            {!!user?.unread && <span className="absolute top-[9px] right-2.5 size-[9px] rounded-full bg-lampas" />}
+            {!!user?.unread && (
+              <span className="absolute -top-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-lampas px-1 text-[14px] font-bold text-white">
+                {user.unread > 9 ? "9+" : user.unread}
+              </span>
+            )}
           </IconButton>
           <IconButton href="/verisite/profile" label="Aking account">
             {user?.badge && <BadgeIcon badge={user.badge} />}

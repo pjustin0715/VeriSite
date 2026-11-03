@@ -4,9 +4,10 @@ import StatusLabel from "@/components/StatusLabel";
 import { shortDate, type Project } from "@/app/verisite/store";
 
 // News-feed card: illustration with status and name, then a progress bar and report count.
-export default function ProjectCard({ project: p }: { project: Project }) {
+// `from` tells the project's Back button where to return (see ProjectView).
+export default function ProjectCard({ project: p, from }: { project: Project; from?: string }) {
   return (
-    <Card href={`/verisite/project/${p.id}`}>
+    <Card href={`/verisite/project/${p.id}${from ? `?from=${from}` : ""}`}>
       <span className="relative block h-[136px] overflow-hidden">
         <Image src={`/verisite/${p.image}.png`} alt="" width={800} height={440} className="-mt-11 h-auto w-full" />
         <span className="absolute inset-x-0 bottom-0 h-[90px] bg-linear-to-b from-[rgba(15,40,60,0)] to-[rgba(15,40,60,.78)]" />

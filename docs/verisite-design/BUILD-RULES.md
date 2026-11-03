@@ -30,8 +30,10 @@ Citizens scan a project's paskil or site. AI flags wrong billboard information a
 - Link the screens together following the links in `screens/*.html`, unless the behavior rules say otherwise.
 
 ## Unfinished (links may lead to a missing page)
-- Screens: Login, Signup, Verify (Welcome goes straight to Home for now), Profile, Badges, MyReports, Updates.
-- LGUDetail has no LGU-only access yet: anyone can change statuses until login and roles exist.
+- Accounts are local mock accounts (localStorage, hashed passwords). The Verify code is shown on screen instead of sent by SMS. Swap for Supabase Auth (phone OTP) later.
+- No Terms or Privacy Policy page yet; the Signup checkbox has nothing to link to.
+- LGUDetail has no LGU-only access yet: any logged-in user can change statuses until roles exist. "Para sa LGU" on Login is left out for the same reason.
+- The "Huwag putulin ang streak!" reminder in the Updates mockup isn't generated yet; Updates come from status changes and followed projects only.
 - Location: "Malapit sa akin" and project matching don't use GPS yet.
 
 ## Git

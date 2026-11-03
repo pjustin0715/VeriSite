@@ -17,7 +17,7 @@ export default function PageHeader({
   back?: string;
   backIcon?: IconName; // "close" for screens that leave a flow, e.g. Result
   title: React.ReactNode;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   right?: React.ReactNode; // e.g. a bookmark IconButton
   narrow?: boolean; // wrap the subtitle clear of a mascot on the right (head-scan)
   children: React.ReactNode;

@@ -70,6 +70,26 @@ const paths = {
     </>
   ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
+  doc: (
+    <>
+      <rect x="5" y="3" width="14" height="18" rx="2.5" />
+      <path d="M9 8h6M9 12h6M9 16h6" />
+    </>
+  ),
+  text: <path d="M3 19l5-13 5 13M5 14h6M14 19c1-4 2-6 3-6s1.5 2 2 3 1 2 2 2" />,
+  logout: <path d="M10 4H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h4M14 8l4 4-4 4M18 12H9" />,
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2.5" />
+      <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+    </>
+  ),
+  phone: (
+    <>
+      <rect x="7" y="3" width="10" height="18" rx="2.5" />
+      <path d="M11 17.5h2" />
+    </>
+  ),
   sign: (
     <>
       <rect x="5" y="3" width="14" height="18" rx="2" />

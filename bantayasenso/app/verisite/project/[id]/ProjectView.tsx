@@ -10,7 +10,7 @@ import IconButton from "@/components/IconButton";
 import NotFound from "@/components/NotFound";
 import StatusLabel from "@/components/StatusLabel";
 import { today, toggleFollow, useData } from "../../data";
-import { longDate, peso, projectsOf, reportsFor, shortDate, type Project } from "../../store";
+import { longDate, peso, projectsOf, reportsFor, shortDate, userOf, type Project } from "../../store";
 
 const summaries: Partial<Record<Project["status"], string>> = {
   lampas: "Lampas na ito sa nakapaskil na petsa. Maaaring may aprubadong dagdag na panahon, kaya tinitingnan pa ng LGU.",
@@ -28,10 +28,17 @@ export default function ProjectView() {
   if (!data) return null;
   const p = projectsOf(data, today()).find((x) => x.id === id);
   if (!p) return <NotFound />;
-  // Back returns to the screen that opened this project (Map, LGU detail), else Home.
-  const back = from === "map" ? `/verisite/map?p=${p.id}` : from === "lgu" ? `/verisite/lgu/${p.id}` : "/verisite/home";
+  // Back returns to the screen that opened this project (Map, LGU detail, account screens), else Home.
+  const backs: Record<string, string> = {
+    map: `/verisite/map?p=${p.id}`,
+    lgu: `/verisite/lgu/${p.id}`,
+    reports: "/verisite/my-reports",
+    updates: "/verisite/updates",
+    following: "/verisite/following",
+  };
+  const back = from && Object.hasOwn(backs, from) ? backs[from] : "/verisite/home";
 
-  const followed = data.user.followed.includes(p.id);
+  const followed = !!userOf(data, today())?.followed.includes(p.id);
   const reports = reportsFor(data, p.id);
   const rows: [IconName, string, string][] = [
     ["peso", "Halaga", peso(p.budget)],

@@ -146,8 +146,8 @@ export default function IllustratedMap({
           const map = new maplibregl.Map({
             container: mapEl.current,
             style: "https://tiles.openfreemap.org/styles/liberty",
-            center,
-            zoom: sel ? 17 : 16,
+            center: sel ? [DEMO_CENTER.lng, DEMO_CENTER.lat] : center,
+            zoom: sel ? 14 : 16,
             pitch: 55,
             pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
             canvasContextAttributes: { powerPreference: "default" },
@@ -170,6 +170,17 @@ export default function IllustratedMap({
               west: b.getWest(),
               east: b.getEast(),
             });
+            if (sel) {
+              map.flyTo({
+                center: [sel.lng, sel.lat],
+                zoom: 17,
+                pitch: 55,
+                offset: [0, -140],
+                curve: 1.42,
+                speed: 1.2,
+                essential: true,
+              });
+            }
           };
 
           map.on("load", onReady);
@@ -216,7 +227,15 @@ export default function IllustratedMap({
     if (picked !== selected) return;
     const hit = projectsRef.current.find((p) => p.id === selected);
     if (hit && mapRef.current) {
-      mapRef.current.flyTo({ center: [hit.lng, hit.lat], zoom: Math.max(mapRef.current.getZoom(), 15), offset: [0, -60] });
+      mapRef.current.flyTo({
+        center: [hit.lng, hit.lat],
+        zoom: 17,
+        pitch: 55,
+        offset: [0, -140],
+        curve: 1.42,
+        speed: 1.2,
+        essential: true,
+      });
     }
   }, [selected]);
 

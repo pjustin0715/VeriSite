@@ -10,11 +10,14 @@ export const DEMO_CENTER = {
     lng: Number(process.env.NEXT_PUBLIC_DEMO_LNG || 120.9367),
 };
 
-export async function signInWithOAuth(redirectTo?: string) {
-    const target = redirectTo || (typeof window !== "undefined" ? window.location.href : undefined);
+export async function signInWithOAuth() {
+    if (typeof window !== "undefined") {
+        const returnPath = window.location.pathname + window.location.search;
+        if (returnPath && returnPath !== "/") sessionStorage.setItem("oauth_return", returnPath);
+    }
     const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: target },
+        options: { redirectTo: typeof window !== "undefined" ? window.location.origin : undefined },
     });
     if (error) throw error;
 }

@@ -99,6 +99,13 @@ export default function HomePage() {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user?.is_anonymous) return;
       setUser(session?.user ?? null);
+      if (session?.user) {
+        const ret = sessionStorage.getItem("oauth_return");
+        if (ret) {
+          sessionStorage.removeItem("oauth_return");
+          window.location.replace(ret);
+        }
+      }
     });
     loadProjects();
     navigator.geolocation?.getCurrentPosition(

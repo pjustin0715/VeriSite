@@ -26,7 +26,9 @@ export default function HomePage() {
   const mapRef = useRef<MapLibreMap | null>(null);
   const selectedRef = useRef<ProjectStatusRow | null>(null);
   const selectedMarkerRef = useRef<any>(null);
+  const projectsRef = useRef<ProjectStatusRow[]>([]);
   const [projects, setProjects] = useState<ProjectStatusRow[]>([]);
+  projectsRef.current = projects;
   const [selected, setSelected] = useState<ProjectStatusRow | null>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [showNearby, setShowNearby] = useState(false);
@@ -197,8 +199,30 @@ export default function HomePage() {
     });
     map.on("click", "pins", (e) => {
       const id = e.features?.[0]?.properties?.id;
-      const hit = projects.find((x) => x.id === id);
+      const hit = projectsRef.current.find((x) => x.id === id);
       if (hit) selectProject(hit);
+    });
+    map.on("mouseenter", "pins", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "pins", () => {
+      map.getCanvas().style.cursor = "";
+    });
+    map.on("click", "clusters", (e) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: ["clusters"] });
+      const clusterId = features[0]?.properties?.cluster_id;
+      const source = map.getSource("projects") as any;
+      source?.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
+        if (err || !features[0]) return;
+        const geom = features[0].geometry as GeoJSON.Point;
+        map.easeTo({ center: geom.coordinates as [number, number], zoom });
+      });
+    });
+    map.on("mouseenter", "clusters", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+    map.on("mouseleave", "clusters", () => {
+      map.getCanvas().style.cursor = "";
     });
   }
 

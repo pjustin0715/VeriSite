@@ -39,8 +39,29 @@ const paths = {
   ),
   question: <path d="M9 9a3 3 0 1 1 4.5 2.6c-1 .6-1.5 1.3-1.5 2.4M12 18v.1" />,
   bookmark: <path d="M6 4h12v17l-6-4-6 4z" />,
+  peso: <path d="M7 20V4h6a4 4 0 0 1 0 8H7M4 8h13M4 11h13" />,
+  person: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c1-5 4-7 8-7s7 2 8 7" />
+    </>
+  ),
+  calendar: (
+    <>
+      <rect x="4" y="5" width="16" height="16" rx="2" />
+      <path d="M4 10h16M9 3v4M15 3v4" />
+    </>
+  ),
+  office: <path d="M4 21h16M6 21V10M10 21V10M14 21V10M18 21V10M3 10l9-6 9 6z" />,
+  shield: <path d="M12 3l8 3v6c0 4.5-3 7.5-8 9-5-1.5-8-4.5-8-9V6z" />,
+  image: (
+    <>
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <circle cx="9" cy="10" r="2" />
+      <path d="M21 16l-5-5-9 9" />
+    </>
+  ),
   close: <path d="M6 6l12 12M18 6L6 18" />,
-  flash: <path d="M13 3L5 14h6l-1 7 8-11h-6z" />,
   sign: (
     <>
       <rect x="5" y="3" width="14" height="18" rx="2" />
@@ -64,18 +85,20 @@ export default function Icon({
   size = 22,
   color = "currentColor",
   strokeWidth = 2.2,
+  fill = "none",
 }: {
   name: IconName;
   size?: number;
   color?: string;
   strokeWidth?: number;
+  fill?: string; // e.g. a filled bookmark when a project is followed
 }) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={fill}
       stroke={color}
       strokeWidth={strokeWidth}
       strokeLinecap="round"

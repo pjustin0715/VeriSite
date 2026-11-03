@@ -1,6 +1,6 @@
 // Home feed filters, kept in the URL (?sort=&status=&type=&near=1) so Home and the Filter sheet share them.
 // Nothing picked = no filter. Self-check: `node --test app/verisite/filters.test.mjs`.
-import type { Project } from "./sample-data";
+import type { Project } from "./store";
 
 export const sorts = { bago: "Pinakabago", luma: "Pinakaluma", report: "Pinakamaraming report" };
 export const statuses = { lampas: "Lampas sa petsa", malapit: "Malapit na", ayon: "Ayon sa plano", tapos: "Tapos na" };
@@ -26,7 +26,7 @@ export function parseFilters(p: Params): Filters {
     sort: pick(sorts, p.sort)[0] ?? "bago",
     status: pick(statuses, p.status),
     type: pick(types, p.type),
-    near: p.near === "1",
+    near: [p.near ?? []].flat().includes("1"),
   };
 }
 
@@ -49,6 +49,6 @@ export function applyFilters(projects: Project[], f: Filters) {
   );
   // `projects` is already newest first.
   if (f.sort === "luma") shown.reverse();
-  if (f.sort === "report") shown.sort((a, b) => b.reports - a.reports);
+  if (f.sort === "report") shown.sort((a, b) => b.reportCount - a.reportCount);
   return shown;
 }

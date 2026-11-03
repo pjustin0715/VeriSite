@@ -77,7 +77,7 @@ async function Sheet({ searchParams }: { searchParams: SearchParams }) {
 export default function FilterPage({ searchParams }: { searchParams: SearchParams }) {
   return (
     <>
-      <HomePage searchParams={searchParams} />
+      <HomePage />
       <Suspense>
         <Sheet searchParams={searchParams} />
       </Suspense>

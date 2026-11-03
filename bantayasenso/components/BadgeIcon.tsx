@@ -1,4 +1,4 @@
-import { badges, type BadgeName } from "@/app/verisite/sample-data";
+import { badges, type BadgeName } from "@/app/verisite/store";
 
 // Medal with ribbon, colored by badge level (Baguhan ... Diyamante).
 export default function BadgeIcon({ badge, size = 32 }: { badge: BadgeName; size?: number }) {

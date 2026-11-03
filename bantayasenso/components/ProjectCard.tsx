@@ -1,12 +1,12 @@
 import Image from "next/image";
 import Card from "@/components/Card";
 import StatusLabel from "@/components/StatusLabel";
-import type { Project } from "@/app/verisite/sample-data";
+import { shortDate, type Project } from "@/app/verisite/store";
 
 // News-feed card: illustration with status and name, then a progress bar and report count.
 export default function ProjectCard({ project: p }: { project: Project }) {
   return (
-    <Card href="/verisite/project">
+    <Card href={`/verisite/project/${p.id}`}>
       <span className="relative block h-[136px] overflow-hidden">
         <Image src={`/verisite/${p.image}.png`} alt="" width={800} height={440} className="-mt-11 h-auto w-full" />
         <span className="absolute inset-x-0 bottom-0 h-[90px] bg-linear-to-b from-[rgba(15,40,60,0)] to-[rgba(15,40,60,.78)]" />
@@ -16,7 +16,7 @@ export default function ProjectCard({ project: p }: { project: Project }) {
         <span className="absolute inset-x-3.5 bottom-[9px] text-xl leading-[1.1] font-bold tracking-[-0.2px] text-white">
           {p.name}
           <span className="mt-0.5 block text-[15px] font-medium text-[#DCEBE6]">
-            {p.place} • {p.date}
+            {p.place} • {shortDate(p.postedAt)}
           </span>
         </span>
       </span>
@@ -25,7 +25,7 @@ export default function ProjectCard({ project: p }: { project: Project }) {
           <span className="block h-2 rounded bg-primary" style={{ width: `${p.progress}%` }} />
         </span>
         {p.progress}%<span className="text-muted">•</span>
-        {p.reports} report
+        {p.reportCount} report
       </span>
     </Card>
   );

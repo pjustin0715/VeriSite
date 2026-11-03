@@ -9,7 +9,11 @@ import Logo from "@/components/Logo";
 import PageHeader from "@/components/PageHeader";
 import ProjectCard from "@/components/ProjectCard";
 import StatusLabel, { type Status } from "@/components/StatusLabel";
-import { badges, myReports, projects } from "./sample-data";
+import { sample } from "./sample-data";
+import { badges, projectsOf, seedState } from "./store";
+
+// Fixed day so this static preview renders the same at build time.
+const projects = projectsOf(seedState(sample, "2026-11-03"), "2026-11-03");
 
 // Developer preview of the shared VeriSite parts. Not part of the app flow.
 const colors = ["ink", "muted", "header", "primary", "link", "soft", "page", "line", "yellow", "lampas", "malapit", "ayon", "unconfirmed", "streak"];
@@ -87,17 +91,6 @@ export default function PreviewPage() {
             <span className="text-lg font-bold">7</span>
           </div>
         </Card>
-        {myReports.map((r) => (
-          <Card key={r.place} href="/verisite/project" className="flex items-center justify-between gap-2 px-3.5 py-3">
-            <span className="text-[17px] leading-[1.2] font-semibold">
-              {r.place}
-              <span className="block text-[15px] font-medium text-muted">
-                {r.issue} • {r.date}
-              </span>
-            </span>
-            <StatusLabel status={r.status} />
-          </Card>
-        ))}
         {projects.map((p) => (
           <ProjectCard key={p.id} project={p} />
         ))}

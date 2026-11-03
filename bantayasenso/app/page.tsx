@@ -31,11 +31,7 @@ export default function HomePage() {
   async function loadProjects() {
     const { data } = await supabase
       .from("project_status")
-      .select("*")
-      .gte("lat", DEMO_CENTER.lat - 0.15)
-      .lte("lat", DEMO_CENTER.lat + 0.15)
-      .gte("lng", DEMO_CENTER.lng - 0.15)
-      .lte("lng", DEMO_CENTER.lng + 0.15);
+      .select("*");
     let list = (data || []) as ProjectStatusRow[];
     const pid = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("project") : null;
     if (pid) {

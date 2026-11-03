@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const res = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-flash-lite",
       contents: [{ inlineData: { mimeType: file.type, data: b64 } }, prompt],
       config: {
         responseMimeType: "application/json",
@@ -66,8 +66,9 @@ export async function POST(req: NextRequest) {
       },
     });
     return NextResponse.json(JSON.parse(res.text || "{}"));
-  } catch {
-    return NextResponse.json({ error: "AI unavailable" }, { status: 503 });
+  } catch (err: any) {
+    console.error("Gemini analyze error:", err?.message || err);
+    return NextResponse.json({ error: err?.message || "AI unavailable" }, { status: 503 });
   }
 }
 

@@ -29,11 +29,24 @@ function ScanInner() {
   async function checkMatch(rawCid?: string | null) {
     const cid = normContractId(rawCid);
     if (!cid) return false;
-    const { data: existing } = await supabase
+    let { data: existing } = await supabase
       .from("projects")
       .select("id")
       .eq("contract_id", cid)
       .maybeSingle();
+    if (!existing && cid.length >= 4) {
+      // Handle OCR 0 vs O confusion at position 2 (e.g. 250D0106 vs 25OD0106)
+      const altChar = cid[2] === "0" ? "O" : cid[2] === "O" ? "0" : cid[2];
+      const alt = cid.slice(0, 2) + altChar + cid.slice(3);
+      if (alt !== cid) {
+        const { data: altHit } = await supabase
+          .from("projects")
+          .select("id")
+          .eq("contract_id", alt)
+          .maybeSingle();
+        existing = altHit;
+      }
+    }
     if (existing) {
       router.push(`/?project=${existing.id}`);
       return true;

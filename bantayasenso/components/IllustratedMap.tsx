@@ -151,6 +151,7 @@ export default function IllustratedMap({
             pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
             canvasContextAttributes: { powerPreference: "default" },
           });
+          map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
           mapRef.current = map;
           requestAnimationFrame(() => map.resize());
 
@@ -161,6 +162,13 @@ export default function IllustratedMap({
             if (fallbackTimer) clearTimeout(fallbackTimer);
             map.resize();
             syncGeoJSON(map);
+            const b = map.getBounds();
+            loadViewportProjects({
+              south: b.getSouth(),
+              north: b.getNorth(),
+              west: b.getWest(),
+              east: b.getEast(),
+            });
           };
 
           map.on("load", onReady);

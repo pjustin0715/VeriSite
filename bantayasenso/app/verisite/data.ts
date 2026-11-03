@@ -89,16 +89,16 @@ function mergeProjectsIntoState(rows: ProjectStatusRow[]) {
   for (const r of rows) {
     byId.set(r.id, mapSupabaseProject(r, byId.get(r.id)));
   }
-  const merged = Array.from(byId.values()).slice(0, 350);
+  const merged = Array.from(byId.values()).slice(0, 500);
   save({ ...s, projects: merged });
 }
 
 export async function loadViewportProjects(bounds?: { south: number; north: number; west: number; east: number }) {
   const b = bounds || {
-    south: userCoords.lat - 0.12,
-    north: userCoords.lat + 0.12,
-    west: userCoords.lng - 0.12,
-    east: userCoords.lng + 0.12,
+    south: userCoords.lat - 0.15,
+    north: userCoords.lat + 0.15,
+    west: userCoords.lng - 0.15,
+    east: userCoords.lng + 0.15,
   };
   const { data } = await supabase
     .from("project_status")
@@ -107,7 +107,7 @@ export async function loadViewportProjects(bounds?: { south: number; north: numb
     .lte("lat", b.north)
     .gte("lng", b.west)
     .lte("lng", b.east)
-    .limit(150);
+    .limit(300);
   if (data && data.length > 0) {
     mergeProjectsIntoState(data as ProjectStatusRow[]);
   }

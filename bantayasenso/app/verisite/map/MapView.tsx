@@ -19,7 +19,7 @@ const fold = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCas
 const matches = (p: Project, q: string) => [p.name, p.place, p.address].some((t) => fold(t).includes(fold(q)));
 
 // Space taken by the search bar on top, and the list button, project card and menu at the bottom.
-const inset = { top: "140px", bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 300px)" };
+const inset = { top: "100px", bottom: "calc(max(24px, env(safe-area-inset-bottom)) + 300px)" };
 
 // Map of all projects (W-Map). `?p=<id>` is the selected pin, so coming back from a project keeps it.
 export default function MapView() {
@@ -65,7 +65,7 @@ export default function MapView() {
         mapInstanceRef={mapInstanceRef}
       />
 
-      <div className="pointer-events-none absolute inset-x-3.5 top-[max(50px,env(safe-area-inset-top))] flex flex-col items-start gap-2.5">
+      <div className="pointer-events-none absolute inset-x-3.5 top-[max(14px,env(safe-area-inset-top))] flex flex-col items-start gap-2.5">
         <form
           role="search"
           onSubmit={(e) => {
@@ -117,10 +117,10 @@ export default function MapView() {
           Tingnan ang listahan
         </Link>
         {selected ? (
-          <Card href={`/verisite/project/${selected.id}?from=map`} className="flex min-h-[96px] w-full items-center gap-3 p-2.5">
+          <Card href={`/verisite/project/${selected.id}?from=map`} className="flex h-[104px] w-full items-center gap-3 p-2.5 overflow-hidden">
             <Image src={`/verisite/${selected.image}.png`} alt="" width={192} height={168} loading="eager" className="h-[84px] w-24 flex-none rounded-[14px] object-cover" />
-            <span className="min-w-0 grow">
-              <span className="line-clamp-2 block text-17 leading-[1.2] font-bold break-words">{selected.name}</span>
+            <span className="min-w-0 grow overflow-hidden">
+              <span className="line-clamp-2 max-h-[2.5em] overflow-hidden text-17 leading-[1.2] font-bold break-words">{selected.name}</span>
               <span className="mt-1.5 block">
                 <StatusLabel status={selected.status} variant="tint" label={selected.status === "lampas" ? `Lampas ${selected.daysLate} araw` : undefined} />
               </span>

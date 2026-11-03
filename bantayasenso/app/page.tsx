@@ -71,6 +71,7 @@ export default function HomePage() {
 
     import("maplibre-gl").then((maplibregl) => {
       if (!isMounted || !mapEl.current || mapRef.current) return;
+      maplibregl.setWorkerUrl?.("/maplibre-gl-worker.mjs");
       const map = new maplibregl.Map({
         container: mapEl.current,
         style: "https://tiles.openfreemap.org/styles/liberty",
@@ -87,6 +88,8 @@ export default function HomePage() {
 
     return () => {
       isMounted = false;
+      mapRef.current?.remove();
+      mapRef.current = null;
     };
   }, []);
 

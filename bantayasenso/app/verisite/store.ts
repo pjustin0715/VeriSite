@@ -109,11 +109,17 @@ export function scoreOf(reportCount: number, open: Report[], daysLate: number): 
 }
 
 export function projectsOf(s: State, today: string): Project[] {
+  const byProject = new Map<string, Report[]>();
+  for (const r of s.reports) {
+    const list = byProject.get(r.projectId);
+    if (list) list.push(r);
+    else byProject.set(r.projectId, [r]);
+  }
   return s.projects
     .map((p) => {
       const daysLate = p.progress < 100 ? -daysBetween(today, p.targetDate) : 0;
       const status: Status = p.progress >= 100 ? "tapos" : daysLate > 0 ? "lampas" : daysLate >= -30 ? "malapit" : "ayon";
-      const mine = s.reports.filter((r) => r.projectId === p.id);
+      const mine = byProject.get(p.id) ?? [];
       const siteStatus = statusOrder[Math.min(2, ...mine.map((r) => statusOrder.indexOf(r.status ?? "bago")))];
       const score = scoreOf(p.reportCount, mine.filter((r) => r.status !== "naaksyunan"), daysLate);
       const unconfirmed = mine.filter((r) => !r.confirmed).length;

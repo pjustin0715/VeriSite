@@ -23,10 +23,13 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export const today = () => new Date().toLocaleDateString("sv"); // local YYYY-MM-DD
 
-let cache: { raw: string | null; state: State } | null = null;
+let cache: { raw: string | null; ver: number; state: State } | null = null;
 let memory: string | null = null; // used when localStorage is blocked (private mode)
 let userCoords = { ...DEMO_CENTER };
 let syncStarted = false;
+let remoteProjects = new Map<string, ProjectRecord>();
+let remoteVer = 0;
+const SAMPLE_IDS = new Set(sample.projects.map((p) => p.id));
 
 function readRaw() {
   try {
@@ -82,15 +85,27 @@ export function mapSupabaseProject(row: ProjectStatusRow, existing?: ProjectReco
   };
 }
 
-function mergeProjectsIntoState(rows: ProjectStatusRow[]) {
+function mergeProjectsIntoState(rows: ProjectStatusRow[], prioritize = false) {
   if (!rows.length) return;
-  const s = load();
-  const byId = new Map(s.projects.map((p) => [p.id, p]));
-  for (const r of rows) {
-    byId.set(r.id, mapSupabaseProject(r, byId.get(r.id)));
+  if (prioritize) {
+    const next = new Map<string, ProjectRecord>();
+    for (const r of rows) {
+      next.set(r.id, mapSupabaseProject(r, remoteProjects.get(r.id)));
+    }
+    for (const [id, p] of remoteProjects) {
+      if (next.size >= 8000) break;
+      if (!next.has(id)) next.set(id, p);
+    }
+    remoteProjects = next;
+  } else {
+    for (const r of rows) {
+      if (remoteProjects.size >= 8000 && !remoteProjects.has(r.id)) continue;
+      remoteProjects.set(r.id, mapSupabaseProject(r, remoteProjects.get(r.id)));
+    }
   }
-  const merged = Array.from(byId.values()).slice(0, 500);
-  save({ ...s, projects: merged });
+  remoteVer++;
+  cache = null;
+  if (typeof window !== "undefined") window.dispatchEvent(new Event(CHANGED));
 }
 
 export async function loadViewportProjects(bounds?: { south: number; north: number; west: number; east: number }) {
@@ -100,16 +115,40 @@ export async function loadViewportProjects(bounds?: { south: number; north: numb
     west: userCoords.lng - 0.15,
     east: userCoords.lng + 0.15,
   };
-  const { data } = await supabase
-    .from("project_status")
-    .select("*")
-    .gte("lat", b.south)
-    .lte("lat", b.north)
-    .gte("lng", b.west)
-    .lte("lng", b.east)
-    .limit(300);
-  if (data && data.length > 0) {
-    mergeProjectsIntoState(data as ProjectStatusRow[]);
+  const baseQuery = () =>
+    supabase
+      .from("project_status")
+      .select("*")
+      .gte("lat", b.south)
+      .lte("lat", b.north)
+      .gte("lng", b.west)
+      .lte("lng", b.east);
+
+  const isWide = b.north - b.south > 0.4 || b.east - b.west > 0.4;
+  if (isWide) {
+    const [r1, r2] = await Promise.all([
+      baseQuery().range(0, 999),
+      baseQuery().range(460, 1459),
+    ]);
+    const combined = [...(r2.data || []), ...(r1.data || [])] as ProjectStatusRow[];
+    if (combined.length > 0) mergeProjectsIntoState(combined, true);
+  } else {
+    const { data } = await baseQuery().limit(1000);
+    if (data && data.length > 0) {
+      mergeProjectsIntoState(data as ProjectStatusRow[], true);
+    }
+  }
+}
+
+function loadRegionsOverview() {
+  for (const offset of [460, 1460, 2460, 3460, 4460]) {
+    supabase
+      .from("project_status")
+      .select("*")
+      .range(offset, offset + 999)
+      .then(({ data }) => {
+        if (data && data.length > 0) mergeProjectsIntoState(data as ProjectStatusRow[], false);
+      });
   }
 }
 
@@ -166,7 +205,7 @@ export async function ensureProjectByContractId(rawCid?: string | null): Promise
   }
 
   if (best) {
-    mergeProjectsIntoState([best]);
+    mergeProjectsIntoState([best], true);
     return mapSupabaseProject(best);
   }
   return null;
@@ -257,35 +296,62 @@ function startBackgroundSync() {
     }
   );
   loadViewportProjects();
+  loadRegionsOverview();
   syncReportsFromSupabase();
+}
+
+function slimProjects(state: State): ProjectRecord[] {
+  const keepIds = new Set<string>(SAMPLE_IDS);
+  for (const r of state.reports) keepIds.add(r.projectId);
+  for (const a of state.accounts) for (const f of a.followed) keepIds.add(f);
+  return state.projects.filter((p) => keepIds.has(p.id));
+}
+
+function withRemote(state: State): State {
+  if (!remoteProjects.size) return state;
+  const byId = new Map<string, ProjectRecord>();
+  for (const p of state.projects) byId.set(p.id, p);
+  for (const [id, p] of remoteProjects) {
+    if (!byId.has(id)) byId.set(id, p);
+  }
+  return { ...state, projects: Array.from(byId.values()) };
 }
 
 function load(): State {
   startBackgroundSync();
   const raw = readRaw();
-  if (cache && cache.raw === raw) return cache.state;
-  let state: State | null = null;
+  if (cache && cache.raw === raw && cache.ver === remoteVer) return cache.state;
+  let base: State | null = null;
   try {
     const s = raw && JSON.parse(raw);
     // Stored data is untrusted: anything unexpected falls back to a fresh start.
-    if ([1, 2, 3].includes(s?.version) && Array.isArray(s.projects) && Array.isArray(s.reports) && Array.isArray(s.updates) && (s.user || Array.isArray(s.accounts)))
-      state = upgrade(s, sample);
+    if ([1, 2, 3].includes(s?.version) && Array.isArray(s.projects) && Array.isArray(s.reports) && Array.isArray(s.updates) && (s.user || Array.isArray(s.accounts))) {
+      const upgraded = upgrade(s, sample);
+      base = { ...upgraded, projects: slimProjects(upgraded) };
+    }
   } catch {}
-  if (!state) {
-    state = seedState(sample, today());
-    const fresh = JSON.stringify(state);
+  if (!base) {
+    base = seedState(sample, today());
+    const fresh = JSON.stringify(base);
     writeRaw(fresh);
-    cache = { raw: readRaw() ?? fresh, state };
-    return state;
+    const full = withRemote(base);
+    cache = { raw: readRaw() ?? fresh, ver: remoteVer, state: full };
+    return full;
   }
-  cache = { raw, state };
-  return state;
+  const full = withRemote(base);
+  cache = { raw, ver: remoteVer, state: full };
+  return full;
 }
 
 function save(state: State) {
-  const raw = JSON.stringify(state);
+  for (const p of state.projects) {
+    if (remoteProjects.has(p.id)) remoteProjects.set(p.id, p);
+  }
+  const slim = { ...state, projects: slimProjects(state) };
+  const raw = JSON.stringify(slim);
   writeRaw(raw);
-  cache = { raw: readRaw() ?? raw, state };
+  const full = withRemote(slim);
+  cache = { raw: readRaw() ?? raw, ver: remoteVer, state: full };
   window.dispatchEvent(new Event(CHANGED));
 }
 

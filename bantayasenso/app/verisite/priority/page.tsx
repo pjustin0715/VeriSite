@@ -26,7 +26,7 @@ export default function PriorityPage() {
     <>
       <PageHeader image="head-scan" back="/verisite/map" title={<span className="text-[26px] whitespace-nowrap">Pinaka-apurahan</span>} subtitle="Mga lugar na kailangan ng agarang pansin">
         <ol className="flex flex-col gap-[9px]">
-          {ranked?.map((p, i) => (
+          {ranked?.slice(0, 100).map((p, i) => (
             <li key={p.id}>
               <Card href={`/verisite/lgu/${p.id}`} className="flex items-center gap-2.5 px-[11px] py-2.5">
                 <span className="w-5 flex-none text-center text-19 font-bold text-muted" aria-label={`Ika-${i + 1}`}>

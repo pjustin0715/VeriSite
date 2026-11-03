@@ -140,14 +140,15 @@ export default function IllustratedMap({
         if (!isMounted || !mapEl.current || mapRef.current) return;
         try {
           maplibregl.setWorkerUrl?.("/maplibre-gl-worker.js?v=.cjs");
-          const sel = projectsRef.current.find((p) => p.id === selected) ?? projectsRef.current[0];
+          const picked = new URLSearchParams(window.location.search).get("p");
+          const sel = picked ? projectsRef.current.find((p) => p.id === picked) : undefined;
           const center: [number, number] = sel ? [sel.lng, sel.lat] : [DEMO_CENTER.lng, DEMO_CENTER.lat];
           const map = new maplibregl.Map({
             container: mapEl.current,
             style: "https://tiles.openfreemap.org/styles/liberty",
             center,
-            zoom: 15,
-            pitch: 45,
+            zoom: sel ? 17 : 16,
+            pitch: 55,
             pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
             canvasContextAttributes: { powerPreference: "default" },
           });
@@ -211,6 +212,8 @@ export default function IllustratedMap({
 
   useEffect(() => {
     if (!selected) return;
+    const picked = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("p") : null;
+    if (picked !== selected) return;
     const hit = projectsRef.current.find((p) => p.id === selected);
     if (hit && mapRef.current) {
       mapRef.current.flyTo({ center: [hit.lng, hit.lat], zoom: Math.max(mapRef.current.getZoom(), 15), offset: [0, -60] });

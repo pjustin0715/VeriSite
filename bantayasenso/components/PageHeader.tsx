@@ -40,10 +40,10 @@ export default function PageHeader({
           width={780}
           height={552}
           preload
-          className="absolute inset-x-0 h-auto w-full max-w-none"
+          className="pointer-events-none absolute inset-x-0 h-auto w-full max-w-none"
           style={{ bottom: `${feet[image] - imageHeight}cqw` }}
         />
-        <div className="relative flex min-h-[46px] justify-between">
+        <div className="relative z-10 flex min-h-[46px] justify-between">
           {back && <IconButton href={back} icon={backIcon} label={backIcon === "close" ? "Isara" : "Bumalik"} />}
           {right}
         </div>

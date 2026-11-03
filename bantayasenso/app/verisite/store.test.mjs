@@ -57,6 +57,7 @@ test("paskil vs record, and matching on Contract ID", () => {
   const p = fresh().projects.find((x) => x.id === "aguinaldo");
   const sign = { contract_id: p.contractId, title: p.name, contractor: p.contractor, implementing_office: null, budget_php: 5_200_000, start_date: p.startDate, target_date: p.targetDate };
   assert.deepEqual(signChecks(p, sign).filter((r) => r.wrong).map((r) => r.label), ["Halaga"]);
+  assert.equal(signChecks({ ...p, office: "REGION IV-B" }, { ...sign, implementing_office: "DPWH REGION IV-B" }).find((r) => r.key === "implementing_office").wrong, false);
   assert.equal(signChecks(p, null).some((r) => r.wrong), false);
   assert.equal(matchProject(fresh().projects, sign).id, "aguinaldo");
   assert.equal(matchProject(fresh().projects, { ...sign, contract_id: "26KCDO42" }).id, "aguinaldo");

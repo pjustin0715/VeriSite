@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ButtonLink from "@/components/ButtonLink";
 import Card from "@/components/Card";
 import Icon, { type IconName } from "@/components/Icon";
@@ -85,6 +85,9 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
   const [picking, setPicking] = useState(false);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sitePhoto, setSitePhoto] = useState<string | null>(null);
+  const [askingPhoto, setAskingPhoto] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const rows = project ? signChecks(project, sign) : [];
   const aiWrong = rows.filter((r) => r.wrong).length;
@@ -116,7 +119,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
     if (on) setSignPicked(new Set()); // no paskil means nothing on it can be wrong
   }
 
-  async function submit(e: React.FormEvent) {
+  function submit(e: React.FormEvent) {
     e.preventDefault();
     if (saving) return;
     if (!project) return setError("Pumili muna ng proyekto.");
@@ -125,10 +128,37 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
       ...hazardRows.filter((h) => hazards.has(h.label)).map((h) => h.label),
     ];
     if (!issues.length) return setError("Pumili ng kahit isang problema.");
+    // Ask for site/hazard photo instead of blindly sending the billboard photo
+    if (!sitePhoto) {
+      setAskingPhoto(true);
+      return;
+    }
+    doSendReport(sitePhoto);
+  }
+
+  function handlePhotoPicked(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      setSitePhoto(dataUrl);
+      doSendReport(dataUrl);
+    };
+    reader.readAsDataURL(file);
+  }
+
+  async function doSendReport(photoToSend: string) {
+    if (!project) return;
     setError("");
     setSaving(true);
+    setAskingPhoto(false);
     try {
-      const report = await sendReport({ projectId: project.id, photo: draft.photo, issues, note, draftId: draft.id });
+      const issues = [
+        ...(noSign ? ["Walang paskil sa lugar"] : rows.filter((r) => signPicked.has(r.key)).map((r) => `Mali sa paskil: ${r.label}`)),
+        ...hazardRows.filter((h) => hazards.has(h.label)).map((h) => h.label),
+      ];
+      const report = await sendReport({ projectId: project.id, photo: photoToSend, issues, note, draftId: draft.id });
       clearDraft();
       router.replace(`/verisite/sent?id=${report.id}`);
     } catch (err) {
@@ -150,11 +180,21 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
         title={found ? <>May nakita ang<br />AI</> : <>Walang nakita<br />ang AI</>}
       >
         <Card className="flex items-center gap-[11px] py-2 pr-3 pl-2">
-          <Image src={draft.photo} alt="Ang litratong kinuha mo" width={128} height={112} unoptimized className="h-14 w-16 flex-none rounded-[13px] object-cover" />
-          <Text title={project?.name ?? "Walang tugmang proyekto"} note={project ? project.place : "Pumili ng proyekto"} />
-          <button type="button" onClick={() => setPicking(true)} className="cursor-pointer text-base font-bold text-link">
-            {project ? "Palitan" : "Pumili"}
-          </button>
+          <Image src={sitePhoto || draft.photo} alt="Ang litratong kinuha mo" width={128} height={112} unoptimized className="h-14 w-16 flex-none rounded-[13px] object-cover" />
+          <span className="min-w-0 grow">
+            <Text title={project?.name ?? "Walang tugmang proyekto"} note={project ? project.place : "Pumili ng proyekto"} />
+            <span className="mt-0.5 block text-14 font-medium text-muted">
+              {sitePhoto ? "Litrato ng problema sa lugar" : "Litrato ng paskil"}
+            </span>
+          </span>
+          <div className="flex flex-col items-end gap-1 flex-none">
+            <button type="button" onClick={() => setPicking(true)} className="cursor-pointer text-15 font-bold text-link">
+              {project ? "Palitan" : "Pumili"}
+            </button>
+            <button type="button" onClick={() => fileInputRef.current?.click()} className="cursor-pointer text-14 font-bold text-primary">
+              {sitePhoto ? "Palitan litrato" : "+ Litrato ng site"}
+            </button>
+          </div>
         </Card>
 
         <SectionTitle>Paskil</SectionTitle>
@@ -254,6 +294,55 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
           <ButtonLink disabled={saving}>{saving ? "Ipinapadala..." : "I-report sa LGU"}</ButtonLink>
         </div>
       </div>
+
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoPicked} />
+
+      {askingPhoto && (
+        <>
+          <button type="button" aria-label="Isara" onClick={() => setAskingPhoto(false)} className="fixed inset-0 z-20 cursor-default bg-[rgba(8,30,28,.55)]" />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="photo-prompt-title"
+            className="fixed inset-x-0 bottom-0 z-30 mx-auto flex max-w-[480px] flex-col rounded-t-sheet bg-white px-5 pt-3 pb-[max(34px,env(safe-area-inset-bottom))] shadow-card"
+          >
+            <div className="mx-auto mb-3.5 h-[5px] w-11 flex-none rounded-[3px] bg-[#D5DEDE]" />
+            <div className="mb-2 flex size-12 items-center justify-center rounded-2xl bg-soft text-primary">
+              <Icon name="image" size={26} color="#1C86CC" />
+            </div>
+            <h2 id="photo-prompt-title" className="text-[22px] font-bold tracking-[-0.3px] text-ink">
+              Magsumite ng litrato ng problema
+            </h2>
+            <p className="mt-2 text-base leading-[1.4] text-muted">
+              Hindi gaanong makatutulong sa LGU ang litrato ng paskil. Mas mainam na maglakip ng litrato ng aktuwal na problema o sitwasyon sa kalsada.
+            </p>
+            <div className="mt-5 flex flex-col gap-2.5">
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="flex h-[52px] w-full items-center justify-center gap-2 rounded-button bg-primary text-17 font-bold text-white shadow-card cursor-pointer hover:bg-link active:scale-[0.98] transition-transform"
+              >
+                <Icon name="scan" size={20} color="#FFFFFF" />
+                Kumuha o pumili ng litrato ng problema
+              </button>
+              <button
+                type="button"
+                onClick={() => doSendReport(draft.photo)}
+                className="flex h-11 w-full items-center justify-center text-15 font-semibold text-muted hover:text-ink cursor-pointer"
+              >
+                Ipadala pa rin ang litrato ng paskil
+              </button>
+              <button
+                type="button"
+                onClick={() => setAskingPhoto(false)}
+                className="flex h-10 w-full items-center justify-center text-15 font-semibold text-muted hover:text-ink cursor-pointer"
+              >
+                Bumalik
+              </button>
+            </div>
+          </div>
+        </>
+      )}
 
       {picking && (
         <>

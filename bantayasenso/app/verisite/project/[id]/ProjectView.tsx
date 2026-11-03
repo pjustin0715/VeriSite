@@ -36,6 +36,7 @@ export default function ProjectView() {
     reports: "/verisite/my-reports",
     updates: "/verisite/updates",
     following: "/verisite/following",
+    priority: "/verisite/priority",
   };
   const back = from && Object.hasOwn(backs, from) ? backs[from] : "/verisite/home";
 
@@ -55,7 +56,7 @@ export default function ProjectView() {
       <div className="relative min-h-[336px] overflow-hidden">
         <Image src={`/verisite/${p.image}.png`} alt="" fill preload sizes="480px" className="object-cover object-bottom" />
         <div className="absolute inset-0 bg-linear-to-b from-[rgba(15,40,60,.62)] via-[rgba(15,40,60,0)] via-38% to-[rgba(15,40,60,.88)] to-92%" />
-        <div className="absolute inset-x-5 top-[max(52px,env(safe-area-inset-top))] flex justify-between">
+        <div className="absolute inset-x-5 top-[max(52px,env(safe-area-inset-top))] z-10 flex justify-between">
           <IconButton href={back} icon="back" label="Bumalik" />
           <IconButton onClick={() => toggleFollow(p.id)} pressed={followed} label={followed ? "Huwag nang sundan" : "Sundan ang proyekto"}>
             <Icon name="bookmark" size={23} fill={followed ? "#1C86CC" : "none"} color={followed ? "#1C86CC" : "currentColor"} />

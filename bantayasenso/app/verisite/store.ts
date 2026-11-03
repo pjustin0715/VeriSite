@@ -265,6 +265,67 @@ export const setPassword = (s: State, username: string, password: string): State
   accounts: s.accounts.map((a) => (a.username === username ? { ...a, password } : a)),
 });
 
+const foldCid = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[OD]/g, "0");
+
+function normText(s: string) {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .replace(/[^a-z0-9]/g, "");
+}
+
+function normOffice(s: string) {
+  return s
+    .toUpperCase()
+    .replace(/DEPARTMENT OF PUBLIC WORKS AND HIGHWAYS|DPWH/gi, "")
+    .replace(/DISTRICT ENGINEERING OFFICE|SUB-DEO|DEO/gi, "")
+    .replace(/REGIONAL OFFICE|RO/gi, "")
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function normContractor(s: string) {
+  return s
+    .toUpperCase()
+    .replace(/INCORPORATED|INC\.?|CORPORATION|CORP\.?|CONSTRUCTION|CONST\.?|COMPANY|CO\.?|ENTERPRISES|BUILDERS/gi, "")
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function isMatch(key: keyof SignReading, read: unknown, record: unknown): boolean {
+  if (read === null || read === undefined) return true;
+  if (key === "budget_php") {
+    const r = Number(read);
+    const rec = Number(record);
+    if (isNaN(r) || isNaN(rec)) return false;
+    return Math.abs(r - rec) <= Math.max(100, rec * 0.01);
+  }
+  if (key === "contract_id") {
+    return foldCid(String(read)) === foldCid(String(record));
+  }
+  if (key === "implementing_office") {
+    const o1 = normOffice(String(read));
+    const o2 = normOffice(String(record));
+    if (!o1 || !o2) return true;
+    return o1 === o2 || o1.includes(o2) || o2.includes(o1);
+  }
+  if (key === "contractor") {
+    const c1 = normContractor(String(read));
+    const c2 = normContractor(String(record));
+    if (!c1 || !c2) return true;
+    return c1 === c2 || c1.includes(c2) || c2.includes(c1);
+  }
+  if (key === "title") {
+    const t1 = normText(String(read));
+    const t2 = normText(String(record));
+    if (!t1 || !t2) return true;
+    return t1 === t2 || t1.includes(t2) || t2.includes(t1);
+  }
+  if (key === "start_date" || key === "target_date") {
+    return String(read).trim() === String(record).trim();
+  }
+  return read === record;
+}
+
 // The paskil as read by the AI next to the project's record. `wrong` = the AI read a value that differs.
 export function signChecks(p: ProjectRecord, sign: SignReading | null) {
   const rows: [keyof SignReading, string, string | number, (v: never) => string][] = [
@@ -278,12 +339,11 @@ export function signChecks(p: ProjectRecord, sign: SignReading | null) {
   ];
   return rows.map(([key, label, record, show]) => {
     const read = sign?.[key] ?? null;
-    const wrong = read !== null && read !== record;
+    const wrong = read !== null && !isMatch(key, read, record);
     return { key, label, wrong, detail: wrong ? `Paskil: ${show(read as never)} • Rekord: ${show(record as never)}` : undefined };
   });
 }
 
-const foldCid = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[OD]/g, "0");
 export const matchProject = (projects: ProjectRecord[], sign: SignReading | null) =>
   projects.find((p) => sign?.contract_id && p.contractId.toUpperCase() === sign.contract_id.toUpperCase()) ??
   projects.find((p) => sign?.contract_id && p.contractId && foldCid(p.contractId) === foldCid(sign.contract_id));

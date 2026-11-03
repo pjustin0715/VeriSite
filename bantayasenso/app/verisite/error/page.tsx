@@ -14,7 +14,7 @@ export default function ErrorPage() {
       </div>
       <section className="relative -mt-[30px] flex grow flex-col gap-3 rounded-t-sheet bg-page px-5 pt-5 pb-[max(34px,env(safe-area-inset-bottom))]">
         <h1 className="mt-2 text-center text-[27px] font-bold tracking-[-0.4px]">Hindi malinaw ang litrato</h1>
-        <p className="mx-2.5 mb-2 text-center text-[17px] leading-[1.4] text-muted">Lumapit nang kaunti at siguraduhing maliwanag.</p>
+        <p className="mx-2.5 mb-2 text-center text-17 leading-[1.4] text-muted">Lumapit nang kaunti at siguraduhing maliwanag.</p>
         <span className="grow" />
         <ButtonLink href="/verisite/scan">Subukan ulit</ButtonLink>
         <ButtonLink href="/verisite/home" variant="white">

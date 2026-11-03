@@ -32,9 +32,9 @@ function Tile({ icon, className }: { icon: IconName; className: string }) {
 
 function Text({ title, note }: { title: string; note: string }) {
   return (
-    <span className="grow text-[17px] leading-[1.2] font-semibold">
+    <span className="grow text-17 leading-[1.2] font-semibold">
       {title}
-      <span className="block text-[15px] font-medium text-muted">{note}</span>
+      <span className="block text-15 font-medium text-muted">{note}</span>
     </span>
   );
 }
@@ -201,7 +201,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
                   />
                   <span>
                     {r.label}
-                    {r.detail && <span className="block text-[14px] font-medium text-muted">{r.detail}</span>}
+                    {r.detail && <span className="block text-14 font-medium text-muted">{r.detail}</span>}
                   </span>
                 </label>
               ))}
@@ -233,7 +233,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
           placeholder="Ikomento ang iyong reklamo"
           className="h-24 w-full resize-none rounded-2xl border-[1.5px] border-[#D8E6EF] bg-white px-3.5 py-3 text-base text-ink placeholder:text-muted focus:border-primary focus:outline-none"
         />
-        <p className="-mt-1 text-right text-[14px] text-muted">{note.length}/500</p>
+        <p className="-mt-1 text-right text-14 text-muted">{note.length}/500</p>
         {/* Keeps the last field clear of the fixed action bar. */}
         <div aria-hidden="true" className="h-20 flex-none" />
       </PageHeader>
@@ -246,7 +246,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
         )}
         <div className="grid grid-cols-[1fr_1.35fr] gap-2.5">
           <ButtonLink href="/verisite/home" variant="white" onClick={clearDraft}>
-            Huwag i-report
+            Huwag <span className="whitespace-nowrap">i-report</span>
           </ButtonLink>
           <ButtonLink disabled={saving}>{saving ? "Ipinapadala..." : "I-report sa LGU"}</ButtonLink>
         </div>

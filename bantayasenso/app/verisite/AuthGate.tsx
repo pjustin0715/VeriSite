@@ -24,5 +24,6 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     if (!isEntry && !loggedIn) router.replace("/verisite/welcome");
   }, [loggedIn, isEntry, path, router]);
 
-  return open ? children : null;
+  // Always render the page, only hidden: returning null "drops" the page segment, which breaks Next's instant-navigation check.
+  return <div className={open ? "contents" : "hidden"}>{children}</div>;
 }

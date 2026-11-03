@@ -24,31 +24,31 @@ export default function PriorityPage() {
 
   return (
     <>
-      <PageHeader image="head-scan" back="/verisite/map" title={<span className="text-[26px] whitespace-nowrap">Pinaka-apurahan</span>} subtitle="Mga lugar na kailangan ng agarang pansin" narrow>
+      <PageHeader image="head-scan" back="/verisite/map" title={<span className="text-[26px] whitespace-nowrap">Pinaka-apurahan</span>} subtitle="Mga lugar na kailangan ng agarang pansin">
         <ol className="flex flex-col gap-[9px]">
           {ranked?.map((p, i) => (
             <li key={p.id}>
               <Card href={`/verisite/lgu/${p.id}`} className="flex items-center gap-2.5 px-[11px] py-2.5">
-                <span className="w-5 flex-none text-center text-[19px] font-bold text-muted" aria-label={`Ika-${i + 1}`}>
+                <span className="w-5 flex-none text-center text-19 font-bold text-muted" aria-label={`Ika-${i + 1}`}>
                   {i + 1}
                 </span>
                 <SitePin project={p} />
                 <span className="ml-[5px] min-w-0 grow text-lg leading-[1.15] font-bold">
                   {p.name}
-                  <span className="mt-0.5 block text-[15px] font-medium text-muted">{reason(p)}</span>
+                  <span className="mt-0.5 block text-15 font-medium text-muted">{reason(p)}</span>
                 </span>
                 <Icon name="next" size={22} color="#5F6E74" />
               </Card>
             </li>
           ))}
         </ol>
-        {ranked && !ranked.length && <Card className="p-5 text-center text-[17px] font-semibold">Wala pang lugar na maipapakita.</Card>}
-        <p className="px-1 text-[14px] leading-[1.35] text-muted">
+        {ranked && !ranked.length && <Card className="p-5 text-center text-17 font-semibold">Wala pang lugar na maipapakita.</Card>}
+        <p className="px-1 text-14 leading-[1.35] text-muted">
           Nakaayos ayon sa urgency score: dami ng report, panganib na nakita, at araw na lampas sa petsa.
         </p>
         <Link
           href="/verisite/map"
-          className="mx-auto mt-2 flex h-[54px] w-[230px] items-center justify-center gap-2 rounded-[27px] bg-primary text-[17px] font-bold text-white no-underline shadow-[0_10px_20px_rgba(20,80,120,.3)]"
+          className="mx-auto mt-2 flex h-[54px] w-[230px] items-center justify-center gap-2 rounded-[27px] bg-primary text-17 font-bold text-white no-underline shadow-[0_10px_20px_rgba(20,80,120,.3)]"
         >
           <Icon name="pin" size={22} color="#FFFFFF" />
           Tingnan sa mapa

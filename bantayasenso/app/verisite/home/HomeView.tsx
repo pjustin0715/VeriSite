@@ -3,7 +3,6 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import BadgeIcon from "@/components/BadgeIcon";
 import BottomNav from "@/components/BottomNav";
 import ButtonLink from "@/components/ButtonLink";
 import Card from "@/components/Card";
@@ -44,14 +43,12 @@ export default function HomeView() {
           </Link>
           <IconButton href="/verisite/updates" icon="bell" label={user?.unread ? `Mga update, ${user.unread} bago` : "Mga update"}>
             {!!user?.unread && (
-              <span className="absolute -top-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-lampas px-1 text-[14px] font-bold text-white">
+              <span className="absolute -top-1.5 -right-1.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full border-2 border-white bg-lampas px-1 text-14 font-bold text-white">
                 {user.unread > 9 ? "9+" : user.unread}
               </span>
             )}
           </IconButton>
-          <IconButton href="/verisite/profile" label="Aking account">
-            {user?.badge && <BadgeIcon badge={user.badge} />}
-          </IconButton>
+          <IconButton href="/verisite/profile" icon="person" label="Aking account" />
         </div>
 
         <Link
@@ -61,8 +58,8 @@ export default function HomeView() {
           <Image src="/verisite/banner.png" alt="" width={700} height={300} preload className="absolute bottom-0 left-0 h-auto w-full" />
           {user && (
             <span className="absolute top-4 left-4 w-[190px] text-xl leading-[1.12] font-bold text-ink">
-              <span className="[text-shadow:0px_1px_5px_#00000033]">Isang scan pa, {user.username}!</span>
-              <span className="mt-1 block text-[15px] leading-[1.2] font-medium">
+              <span className="[overflow-wrap:anywhere] [text-shadow:0px_1px_5px_#00000033]">Isang scan pa, {user.username}!</span>
+              <span className="mt-1 block text-15 leading-[1.2] font-medium">
                 {user.streak ? `${user.streak} araw na streak` : "Mag-report para magsimula ng streak"}
               </span>
             </span>
@@ -79,7 +76,7 @@ export default function HomeView() {
           <Icon name="filter" color={active ? "#FFFFFF" : "#1C86CC"} strokeWidth={2} />
           Filter
           {active > 0 && (
-            <span className="flex size-[22px] items-center justify-center rounded-full bg-white text-[14px] font-bold text-link">{active}</span>
+            <span className="flex size-[22px] items-center justify-center rounded-full bg-white text-14 font-bold text-link">{active}</span>
           )}
         </Link>
         <SortMenu
@@ -93,12 +90,12 @@ export default function HomeView() {
       </div>
 
       <div className="flex flex-col gap-3 px-5">
-        {shown?.map((p) => (
-          <ProjectCard key={p.id} project={p} />
+        {shown?.map((p, i) => (
+          <ProjectCard key={p.id} project={p} eager={i === 0} />
         ))}
         {shown && !shown.length && (
           <Card className="flex flex-col items-center gap-3 p-5 text-center">
-            <p className="text-[17px] font-semibold">Walang proyektong tugma</p>
+            <p className="text-17 font-semibold">Walang proyektong tugma</p>
             <ButtonLink href={cleared}>Alisin lahat</ButtonLink>
           </Card>
         )}

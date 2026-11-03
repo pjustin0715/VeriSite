@@ -24,6 +24,15 @@
   --radius-button: 18px;
   --radius-sheet: 28px;
   --shadow-card: 0 1px 2px rgba(20, 80, 120, 0.06), 0 14px 30px rgba(20, 80, 120, 0.1);
+  /* Text sizes that follow Laki ng letra: text-14, text-15, text-base (16), text-17, text-lg (18), text-19, text-xl (20).
+     Use fixed text-[Npx] only where the text must not grow (titles, bottom nav, map pins). */
+  --text-14: calc(14px * var(--ts));
+  --text-15: calc(15px * var(--ts));
+  --text-base: calc(16px * var(--ts));
+  --text-17: calc(17px * var(--ts));
+  --text-lg: calc(18px * var(--ts));
+  --text-19: calc(19px * var(--ts));
+  --text-xl: calc(20px * var(--ts));
 }
 
 :root {
@@ -51,7 +60,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* VeriSite "Laki ng letra: Malaki" (set on <html> by app/verisite/layout.tsx). */
-html[data-text="malaki"] .vs-app {
-  zoom: 1.15;
+/* VeriSite "Laki ng letra" (Profile). app/verisite/layout.tsx sets data-text on <html> before the first paint.
+   Only readable text (14-20px) grows, 12% for Malaki; titles, icons, spacing, pictures and the bottom nav keep their size. */
+:root {
+  --ts: 1;
+}
+html[data-text="malaki"] {
+  --ts: 1.12;
 }

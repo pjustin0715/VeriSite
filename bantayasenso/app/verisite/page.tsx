@@ -34,7 +34,7 @@ export default function PreviewPage() {
         <Heading>Kulay</Heading>
         <div className="grid grid-cols-4 gap-2">
           {colors.map((c) => (
-            <div key={c} className="text-center text-[14px]">
+            <div key={c} className="text-center text-14">
               <div className="h-10 rounded-xl border border-line" style={{ background: `var(--color-${c})` }} />
               {c}
             </div>
@@ -75,7 +75,7 @@ export default function PreviewPage() {
         <Heading>Mga badge</Heading>
         <div className="flex gap-3">
           {badges.map((b) => (
-            <div key={b.name} className="flex flex-col items-center text-[14px]">
+            <div key={b.name} className="flex flex-col items-center text-14">
               <BadgeIcon badge={b.name} size={40} />
               {b.name}
             </div>

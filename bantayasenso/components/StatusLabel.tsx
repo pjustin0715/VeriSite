@@ -27,8 +27,9 @@ export default function StatusLabel({
   const solid = variant === "solid";
   return (
     <span
-      className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-2xl px-3 text-[15px] font-bold ${
-        solid ? "h-8 text-white" : variant === "soft" ? "h-[30px] bg-white/95 shadow-[0_4px_10px_rgba(0,0,0,.14)]" : "h-8"
+      // min-height, not height: in a narrow spot with large text the label wraps instead of spilling out.
+      className={`inline-flex items-center gap-1.5 rounded-2xl px-3 py-1 text-15 leading-[1.15] font-bold ${
+        solid ? "min-h-8 text-white" : variant === "soft" ? "min-h-[30px] bg-white/95 shadow-[0_4px_10px_rgba(0,0,0,.14)]" : "min-h-8"
       }`}
       style={solid ? { background: s.solid } : { color: s.soft, background: variant === "tint" ? `${s.solid}1F` : undefined }}
     >

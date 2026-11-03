@@ -20,7 +20,7 @@ function Frame({ label, left, top, width, height }: { label: string; left: numbe
       <span className={`${corner} top-0 right-0 rounded-tr-xl border-t-4 border-r-4`} />
       <span className={`${corner} bottom-0 left-0 rounded-bl-xl border-b-4 border-l-4`} />
       <span className={`${corner} right-0 bottom-0 rounded-br-xl border-r-4 border-b-4`} />
-      <span className="absolute -top-[34px] left-0 flex h-7 items-center rounded-[9px] bg-yellow px-2.5 text-[15px] font-bold whitespace-nowrap">
+      <span className="absolute -top-[34px] left-0 flex h-7 items-center rounded-[9px] bg-yellow px-2.5 text-15 font-bold whitespace-nowrap">
         {label}
       </span>
     </div>
@@ -103,7 +103,7 @@ export default function ScanPage() {
           type="button"
           onClick={() => gallery.current?.click()}
           disabled={busy}
-          className="mx-auto flex cursor-pointer flex-col items-center gap-1 text-[15px] font-semibold text-white"
+          className="mx-auto flex cursor-pointer flex-col items-center gap-1 text-15 font-semibold text-white"
         >
           <span className="flex size-[52px] items-center justify-center rounded-2xl bg-white shadow-[0_6px_14px_rgba(0,0,0,.25)]">
             <Icon name="image" size={25} color="#1E2B30" />

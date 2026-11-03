@@ -25,17 +25,17 @@ export default function SentView() {
         {report ? (
           <>
             <h1 className="mt-1 text-center text-[29px] font-bold tracking-[-0.4px]">Salamat, {user.username}!</h1>
-            <p className="mb-1.5 text-center text-[17px] text-muted">Naipadala sa LGU • #{report.id}</p>
+            <p className="mb-1.5 text-center text-17 text-muted">Naipadala sa LGU • #{report.id}</p>
             <div className="flex gap-2.5">
               <Card className="flex flex-1 flex-col items-center gap-0.5 px-1.5 py-3">
                 <Icon name="flame" size={28} color="#E8681C" strokeWidth={2.1} />
                 <strong className="text-xl font-bold text-streak">{user.streak} araw</strong>
-                <span className="text-[15px] text-muted">Streak</span>
+                <span className="text-15 text-muted">Streak</span>
               </Card>
               <Card className="flex flex-1 flex-col items-center gap-0.5 px-1.5 py-3">
                 {user.badge && <BadgeIcon badge={user.badge} size={30} />}
                 <strong className="text-xl font-bold text-link">{user.reportCount}</strong>
-                <span className="text-[15px] text-muted">Report mo</span>
+                <span className="text-15 text-muted">Report mo</span>
               </Card>
             </div>
           </>

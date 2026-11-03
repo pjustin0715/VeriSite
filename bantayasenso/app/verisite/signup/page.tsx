@@ -70,7 +70,7 @@ export default function SignupPage() {
           error={errors.password}
         />
         <div>
-          <label className="flex cursor-pointer items-center gap-3 text-[17px] leading-[1.3] font-semibold">
+          <label className="flex cursor-pointer items-center gap-3 text-17 leading-[1.3] font-semibold">
             <input
               type="checkbox"
               checked={form.terms}
@@ -81,7 +81,7 @@ export default function SignupPage() {
             {/* shortcut: no Terms or Privacy Policy page yet; link them here once written. */}
             Pumapayag ako sa Terms at Privacy Policy.
           </label>
-          {errors.terms && <p className="mt-1.5 text-[15px] font-semibold text-lampas">{errors.terms}</p>}
+          {errors.terms && <p className="mt-1.5 text-15 font-semibold text-lampas">{errors.terms}</p>}
         </div>
         <ButtonLink disabled={busy}>Gumawa ng account</ButtonLink>
       </form>

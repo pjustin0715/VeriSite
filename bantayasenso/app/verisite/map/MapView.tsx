@@ -58,7 +58,7 @@ export default function MapView() {
             placeholder="Hanapin ang lugar"
             aria-label="Hanapin ang lugar"
             maxLength={60}
-            className="h-full min-w-0 grow bg-transparent text-[17px] font-semibold outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
+            className="h-full min-w-0 grow bg-transparent text-17 font-semibold outline-none placeholder:text-muted [&::-webkit-search-cancel-button]:hidden"
           />
           {q && (
             <button type="button" onClick={() => setQ("")} aria-label="Alisin ang hinahanap" className="flex size-11 flex-none cursor-pointer items-center justify-center rounded-2xl">
@@ -66,7 +66,7 @@ export default function MapView() {
             </button>
           )}
         </form>
-        <ul aria-label="Kahulugan ng kulay" className="grid grid-cols-2 gap-x-2.5 gap-y-[5px] rounded-2xl bg-white/95 px-[13px] py-[9px] text-[14px] font-semibold shadow-card">
+        <ul aria-label="Kahulugan ng kulay" className="grid grid-cols-2 gap-x-2.5 gap-y-[5px] rounded-2xl bg-white/95 px-[13px] py-[9px] text-14 font-semibold shadow-card">
           {legend.map(([s, label]) => (
             <li key={s} className="flex items-center gap-1.5">
               <span className="flex size-[18px] items-center justify-center rounded-full" style={{ background: statuses[s].solid }}>
@@ -81,16 +81,16 @@ export default function MapView() {
       <div className="absolute inset-x-3.5 bottom-[calc(max(24px,env(safe-area-inset-bottom))+120px)] flex flex-col items-center gap-3">
         <Link
           href="/verisite/priority"
-          className="flex h-[54px] w-[250px] max-w-full items-center justify-center gap-2 rounded-[27px] bg-primary text-[17px] font-bold text-white no-underline shadow-[0_10px_20px_rgba(20,80,120,.3)]"
+          className="flex h-[54px] w-[250px] max-w-full items-center justify-center gap-2 rounded-[27px] bg-primary text-17 font-bold text-white no-underline shadow-[0_10px_20px_rgba(20,80,120,.3)]"
         >
           <Icon name="list" size={22} color="#FFFFFF" />
           Tingnan ang listahan
         </Link>
         {selected ? (
           <Card href={`/verisite/project/${selected.id}?from=map`} className="flex min-h-[104px] w-full items-center gap-3 p-2.5">
-            <Image src={`/verisite/${selected.image}.png`} alt="" width={192} height={168} className="h-[84px] w-24 flex-none rounded-[14px] object-cover" />
+            <Image src={`/verisite/${selected.image}.png`} alt="" width={192} height={168} loading="eager" className="h-[84px] w-24 flex-none rounded-[14px] object-cover" />
             <span className="min-w-0 grow">
-              <span className="block truncate text-[19px] leading-[1.15] font-bold">{selected.name}</span>
+              <span className="block text-19 leading-[1.15] font-bold">{selected.name}</span>
               <span className="mt-1.5 block">
                 <StatusLabel status={selected.status} variant="tint" label={selected.status === "lampas" ? `Lampas ${selected.daysLate} araw` : undefined} />
               </span>
@@ -100,7 +100,7 @@ export default function MapView() {
         ) : (
           data && (
             <Card className="flex min-h-[104px] w-full flex-col items-center justify-center gap-1 p-3 text-center">
-              <p role="status" className="text-[17px] font-bold">
+              <p role="status" className="text-17 font-bold">
                 {q ? `Walang lugar na tugma sa “${q.trim()}”` : "Wala pang proyekto sa mapa"}
               </p>
               {q && (

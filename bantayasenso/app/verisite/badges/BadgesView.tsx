@@ -45,7 +45,7 @@ export default function BadgesView() {
             <>
               <p className="flex items-baseline justify-between gap-2 text-lg font-bold">
                 <span>
-                  {next.min - count} report para sa {next.name}
+                  {next.min - count} report pa bago maging {next.name}
                 </span>
                 <span className="text-xl text-link">
                   {count} / {next.min}
@@ -56,7 +56,10 @@ export default function BadgesView() {
               </div>
             </>
           ) : (
-            <p className="text-lg font-bold">Nasa pinakamataas na badge ka na! {count} report</p>
+            <p className="text-lg font-bold">
+              {user.badge} ka na, ang pinakamataas na badge!
+              <span className="block text-base font-semibold text-muted">{count} report mo. Salamat sa pagbabantay!</span>
+            </p>
           )}
         </Card>
 
@@ -75,11 +78,10 @@ export default function BadgesView() {
               <BadgeIcon badge={b.name} size={40} />
               <span className="grow">
                 <strong className={`block text-xl font-bold ${got ? "" : "text-muted"}`}>{b.name}</strong>
-                <span className="text-lg font-semibold text-muted">{b.min}+ report</span>
+                <span className="block text-lg font-semibold text-muted">{b.min}+ report</span>
+                {mine && <span className="block text-base font-bold text-link">Badge mo ngayon</span>}
               </span>
-              {mine ? (
-                <span className="text-lg font-bold text-link">Ikaw ito</span>
-              ) : got ? (
+              {got ? (
                 <Icon name="check" size={26} color="#2E9E6B" strokeWidth={2.6} />
               ) : (
                 <span role="img" aria-label="Hindi pa nakukuha">

@@ -45,7 +45,7 @@ async function Sheet({ searchParams }: { searchParams: SearchParams }) {
           <div className="mt-4 flex flex-col gap-4 pb-4">
             {groups.map((g) => (
               <fieldset key={g.key}>
-                <legend className="mb-2 text-[17px] font-bold">{g.title}</legend>
+                <legend className="mb-2 text-17 font-bold">{g.title}</legend>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(g.options).map(([value, label]) => (
                     <label

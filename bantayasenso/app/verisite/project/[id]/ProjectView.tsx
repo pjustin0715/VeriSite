@@ -75,14 +75,14 @@ export default function ProjectView() {
             [p.urgency, "Urgency"],
           ].map(([value, label]) => (
             <Card key={label} className="flex-1 px-1 py-2.5 text-center">
-              <strong className="block text-[19px] font-bold text-link">{value}</strong>
-              <span className="text-[14px] text-muted">{label}</span>
+              <strong className="block text-19 font-bold text-link">{value}</strong>
+              <span className="text-14 text-muted">{label}</span>
             </Card>
           ))}
         </div>
 
         <div className="rounded-card bg-linear-135 from-[#D9EFFB] to-[#F0F9FE] px-4 py-3.5">
-          <strong className="text-[17px] font-bold">Sa madaling sabi</strong>
+          <strong className="text-17 font-bold">Sa madaling sabi</strong>
           <p className="mt-[3px] text-base leading-[1.4]">{summaries[p.status]}</p>
         </div>
 
@@ -114,8 +114,8 @@ export default function ProjectView() {
                   {r.user}
                   <BadgeIcon badge={r.badge} size={22} />
                 </span>
-                <span className="mt-0.5 line-clamp-2 text-[15px] leading-[1.3]">{r.note || r.issues.join(", ")}</span>
-                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[14px] text-muted">
+                <span className="mt-0.5 line-clamp-2 text-15 leading-[1.3]">{r.note || r.issues.join(", ")}</span>
+                <span className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-14 text-muted">
                   {shortDate(r.createdAt)} • {handled[r.status ?? "bago"]}
                   {r.confirmed && (
                     <span className="inline-flex items-center gap-0.5 font-semibold text-[#1E7A50]">

@@ -27,7 +27,7 @@ export default function TextField({
         />
       </span>
       {error && (
-        <p id={`${id}-error`} className="mt-1.5 text-[15px] leading-[1.3] font-semibold text-lampas">
+        <p id={`${id}-error`} className="mt-1.5 text-15 leading-[1.3] font-semibold text-lampas">
           {error}
         </p>
       )}

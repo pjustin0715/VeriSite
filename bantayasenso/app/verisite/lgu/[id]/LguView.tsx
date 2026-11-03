@@ -31,7 +31,7 @@ function summary(p: Project, reports: Report[]) {
 function Bar({ label, value, max }: { label: string; value: number; max: number }) {
   return (
     <div>
-      <div className="flex justify-between text-[15px] font-semibold">
+      <div className="flex justify-between text-15 font-semibold">
         <span>{label}</span>
         <span className="text-muted">
           {value}/{max}
@@ -69,19 +69,19 @@ export default function LguView() {
         </svg>
         <span className="text-xl leading-[1.2] font-bold">
           {score.level} ang urgency
-          <span className="mt-0.5 block text-[15px] font-medium">Tulong ng AI, tao ang magpapasya</span>
+          <span className="mt-0.5 block text-15 font-medium">Tulong ng AI, tao ang magpapasya</span>
         </span>
       </section>
 
       <Card className="flex flex-col gap-2.5 px-4 py-3.5">
-        <h2 className="text-[17px] font-bold">Bakit {score.level.toLowerCase()}?</h2>
+        <h2 className="text-17 font-bold">Bakit {score.level.toLowerCase()}?</h2>
         <Bar label={`Dami ng report: ${p.reportCount}`} value={score.reports} max={45} />
         <Bar label={`Panganib: ${score.topHazard?.toLowerCase() ?? "walang nakita"}`} value={score.hazard} max={35} />
         <Bar label={p.daysLate > 0 ? `Lampas: ${p.daysLate} araw` : "Hindi pa lampas sa petsa"} value={score.late} max={20} />
       </Card>
 
       <Card className="px-4 py-3">
-        <h2 className="text-[17px] font-bold">Buod ng AI</h2>
+        <h2 className="text-17 font-bold">Buod ng AI</h2>
         <p className="mt-[3px] text-base leading-[1.35]">{summary(p, reports)}</p>
       </Card>
 
@@ -96,7 +96,7 @@ export default function LguView() {
               aria-checked={on}
               disabled={!reports.length}
               onClick={() => setStatus(p.id, value)}
-              className={`h-11 cursor-pointer rounded-[13px] text-[15px] font-semibold disabled:cursor-not-allowed disabled:text-muted ${on ? "bg-primary text-white" : "text-ink"}`}
+              className={`h-11 cursor-pointer rounded-[13px] text-15 font-semibold disabled:cursor-not-allowed disabled:text-muted ${on ? "bg-primary text-white" : "text-ink"}`}
             >
               {label}
             </button>

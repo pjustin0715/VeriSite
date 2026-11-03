@@ -26,6 +26,21 @@ function ScanInner() {
     );
   }, []);
 
+  async function checkMatch(rawCid?: string | null) {
+    const cid = normContractId(rawCid);
+    if (!cid) return false;
+    const { data: existing } = await supabase
+      .from("projects")
+      .select("id")
+      .eq("contract_id", cid)
+      .maybeSingle();
+    if (existing) {
+      router.push(`/?project=${existing.id}`);
+      return true;
+    }
+    return false;
+  }
+
   async function runAnalyze(rawFile: File | Blob, cannedFallback?: any) {
     setBusy(true);
     setStatusMsg("Processing photo...");
@@ -51,12 +66,15 @@ function ScanInner() {
       });
       clearTimeout(timer);
       if (!res.ok) throw new Error("API failed");
-      setFields(await res.json());
+      const analyzed = await res.json();
+      setFields(analyzed);
       setStatusMsg("");
+      if (mode === "sign" && (await checkMatch(analyzed.contract_id))) return;
     } catch {
       if (cannedFallback) {
         setFields(cannedFallback);
         setStatusMsg("Loaded sample preset (offline/timeout fallback).");
+        if (mode === "sign" && (await checkMatch(cannedFallback.contract_id))) return;
       } else {
         setFields({ contract_id: "", title: "", contractor: "", budget_php: null, target_date: "", concerns: [], summary: "" });
         setStatusMsg("AI unavailable — please fill in details manually.");
@@ -84,18 +102,8 @@ function ScanInner() {
       }
 
       if (mode === "sign") {
+        if (await checkMatch(fields.contract_id)) return;
         const cid = normContractId(fields.contract_id);
-        if (cid) {
-          const { data: existing } = await supabase
-            .from("projects")
-            .select("id")
-            .eq("contract_id", cid)
-            .maybeSingle();
-          if (existing) {
-            router.push(`/?project=${existing.id}`);
-            return;
-          }
-        }
         const { data: created, error } = await supabase
           .from("projects")
           .insert({

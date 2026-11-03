@@ -21,6 +21,7 @@ const COLOR_HEX: Record<ProjectStatusRow["status"], string> = {
 export default function HomePage() {
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+  const selectedRef = useRef<ProjectStatusRow | null>(null);
   const [projects, setProjects] = useState<ProjectStatusRow[]>([]);
   const [selected, setSelected] = useState<ProjectStatusRow | null>(null);
   const [reports, setReports] = useState<any[]>([]);
@@ -35,17 +36,28 @@ export default function HomePage() {
       .lte("lat", DEMO_CENTER.lat + 0.15)
       .gte("lng", DEMO_CENTER.lng - 0.15)
       .lte("lng", DEMO_CENTER.lng + 0.15);
-    if (data) {
-      setProjects(data as ProjectStatusRow[]);
-      const pid = new URLSearchParams(window.location.search).get("project");
-      if (pid) {
-        const hit = (data as ProjectStatusRow[]).find((p) => p.id === pid);
-        if (hit) selectProject(hit);
+    let list = (data || []) as ProjectStatusRow[];
+    const pid = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("project") : null;
+    if (pid) {
+      let hit = list.find((p) => p.id === pid);
+      if (!hit) {
+        const { data: single } = await supabase
+          .from("project_status")
+          .select("*")
+          .eq("id", pid)
+          .maybeSingle();
+        if (single) {
+          hit = single as ProjectStatusRow;
+          list = [hit, ...list];
+        }
       }
+      if (hit) selectProject(hit);
     }
+    setProjects(list);
   }
 
   async function selectProject(p: ProjectStatusRow) {
+    selectedRef.current = p;
     setSelected(p);
     mapRef.current?.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55 });
     const { data } = await supabase
@@ -72,17 +84,23 @@ export default function HomePage() {
     import("maplibre-gl").then((maplibregl) => {
       if (!isMounted || !mapEl.current || mapRef.current) return;
       maplibregl.setWorkerUrl?.("/maplibre-gl-worker.mjs");
+      const initialCenter = selectedRef.current
+        ? [selectedRef.current.lng, selectedRef.current.lat]
+        : [DEMO_CENTER.lng, DEMO_CENTER.lat];
       const map = new maplibregl.Map({
         container: mapEl.current,
         style: "https://tiles.openfreemap.org/styles/liberty",
-        center: [DEMO_CENTER.lng, DEMO_CENTER.lat],
-        zoom: 16,
+        center: initialCenter as [number, number],
+        zoom: selectedRef.current ? 17 : 16,
         pitch: 55,
       });
       map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
       mapRef.current = map;
       map.on("load", () => {
         renderProjects(map);
+        if (selectedRef.current) {
+          map.flyTo({ center: [selectedRef.current.lng, selectedRef.current.lat], zoom: 17, pitch: 55 });
+        }
       });
     });
 

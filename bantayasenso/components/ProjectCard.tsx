@@ -15,9 +15,9 @@ export default function ProjectCard({ project: p, from, eager }: { project: Proj
         <span className="absolute top-2.5 left-2.5">
           <StatusLabel status={p.status} variant="soft" />
         </span>
-        <span className="absolute inset-x-3.5 bottom-[9px] text-xl leading-[1.1] font-bold tracking-[-0.2px] text-white">
-          {p.name}
-          <span className="mt-0.5 block text-15 font-medium text-[#DCEBE6]">
+        <span className="absolute inset-x-3.5 bottom-[9px] max-w-[calc(100%-28px)] text-xl leading-[1.1] font-bold tracking-[-0.2px] text-white">
+          <span className="line-clamp-2 block break-words">{p.name}</span>
+          <span className="mt-0.5 block truncate text-15 font-medium text-[#DCEBE6]">
             {p.place} • {shortDate(p.postedAt)}
           </span>
         </span>

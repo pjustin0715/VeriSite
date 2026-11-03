@@ -30,11 +30,13 @@ export default function IllustratedMap({
   selected,
   onSelect,
   inset,
+  mapInstanceRef,
 }: {
   projects: Project[];
   selected?: string;
   onSelect: (id: string) => void;
   inset: { top: string; bottom: string };
+  mapInstanceRef?: React.MutableRefObject<MapLibreMap | null>;
 }) {
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -152,8 +154,8 @@ export default function IllustratedMap({
             pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
             canvasContextAttributes: { powerPreference: "default" },
           });
-          map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
           mapRef.current = map;
+          if (mapInstanceRef) mapInstanceRef.current = map;
           requestAnimationFrame(() => map.resize());
 
           let loaded = false;
@@ -209,6 +211,7 @@ export default function IllustratedMap({
     return () => {
       isMounted = false;
       if (fallbackTimer) clearTimeout(fallbackTimer);
+      if (mapInstanceRef) mapInstanceRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };

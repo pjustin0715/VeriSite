@@ -52,19 +52,19 @@ export default function ProjectView() {
 
   return (
     <>
-      <div className="relative h-[336px] overflow-hidden">
+      <div className="relative min-h-[336px] overflow-hidden">
         <Image src={`/verisite/${p.image}.png`} alt="" fill preload sizes="480px" className="object-cover object-bottom" />
-        <div className="absolute inset-0 bg-linear-to-b from-[rgba(15,40,60,.62)] via-[rgba(15,40,60,0)] via-38% to-[rgba(15,40,60,.82)] to-92%" />
+        <div className="absolute inset-0 bg-linear-to-b from-[rgba(15,40,60,.62)] via-[rgba(15,40,60,0)] via-38% to-[rgba(15,40,60,.88)] to-92%" />
         <div className="absolute inset-x-5 top-[max(52px,env(safe-area-inset-top))] flex justify-between">
           <IconButton href={back} icon="back" label="Bumalik" />
           <IconButton onClick={() => toggleFollow(p.id)} pressed={followed} label={followed ? "Huwag nang sundan" : "Sundan ang proyekto"}>
             <Icon name="bookmark" size={23} fill={followed ? "#1C86CC" : "none"} color={followed ? "#1C86CC" : "currentColor"} />
           </IconButton>
         </div>
-        <div className="absolute inset-x-5 top-[194px]">
+        <div className="relative z-[1] px-5 pt-[170px] pb-10">
           <StatusLabel status={p.status} variant="soft" label={p.status === "lampas" ? `Lampas ${p.daysLate} araw` : undefined} />
-          <h1 className="mt-2 text-[26px] leading-[1.12] font-bold tracking-[-0.4px] text-white">{p.name}</h1>
-          <p className="mt-[3px] text-base text-[#DCEBE6]">{p.address}</p>
+          <h1 className="mt-2 text-[24px] leading-[1.2] font-bold tracking-[-0.4px] text-white break-words">{p.name}</h1>
+          <p className="mt-[3px] text-base text-[#DCEBE6] break-words">{p.address}</p>
         </div>
       </div>
 

@@ -145,7 +145,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
     <form onSubmit={submit} noValidate>
       <PageHeader
         image={found ? "head-worry" : "head-happy"}
-        back="/verisite/scan"
+        back={project ? `/verisite/project/${project.id}?from=map` : "/verisite/map"}
         backIcon="close"
         title={found ? <>May nakita ang<br />AI</> : <>Walang nakita<br />ang AI</>}
       >

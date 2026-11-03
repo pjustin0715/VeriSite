@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import Icon from "@/components/Icon";
 import { analyzePhoto } from "../ai";
 import { getData, getDraft, setDraft, today } from "../data";
-import { projectsOf } from "../store";
+import { matchProject, projectsOf } from "../store";
 
 const steps = ["Binabasa ang paskil", "Hinahanap ang panganib", "Kinukumpara sa rekord"];
 
@@ -28,9 +28,16 @@ export default function LoadingPage() {
     analyzePhoto(draft.photo, site)
       .then((ai) => {
         if (cancelled) return;
-        setDraft({ ...draft, ai });
+        const freshProjects = projectsOf(getData(), today());
+        const matched = (ai.sign && matchProject(freshProjects, ai.sign)) || (draft.projectId ? freshProjects.find((p) => p.id === draft.projectId) : undefined);
+        const resolvedProjectId = matched?.id ?? draft.projectId;
+        setDraft({ ...draft, projectId: resolvedProjectId, ai });
         setDone(steps.length);
-        router.replace("/verisite/result");
+        if (resolvedProjectId) {
+          router.replace(`/verisite/map?p=${resolvedProjectId}`);
+        } else {
+          router.replace("/verisite/result");
+        }
       })
       .catch(() => !cancelled && router.replace("/verisite/error"));
     return () => {

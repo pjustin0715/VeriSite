@@ -9,7 +9,7 @@ import IconButton from "@/components/IconButton";
 import NotFound from "@/components/NotFound";
 import ReportRow from "@/components/ReportRow";
 import StatusLabel from "@/components/StatusLabel";
-import { today, toggleFollow, useData } from "../../data";
+import { today, toggleFollow, useData, useDraft } from "../../data";
 import { longDate, peso, projectsOf, reportsFor, userOf, type Project } from "../../store";
 
 const summaries: Partial<Record<Project["status"], string>> = {
@@ -25,6 +25,7 @@ export default function ProjectView() {
   const from = params.get("from");
   const self = `${usePathname()}${params.size ? `?${params}` : ""}`; // this page, for Back on the report pages
   const data = useData();
+  const draft = useDraft();
   if (!data) return null;
   const p = projectsOf(data, today()).find((x) => x.id === id);
   if (!p) return <NotFound />;
@@ -111,7 +112,11 @@ export default function ProjectView() {
       </section>
 
       <div className="fixed inset-x-0 bottom-0 z-10 mx-auto max-w-[480px] rounded-t-3xl bg-white px-5 pt-3 pb-[max(30px,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(20,80,120,.12)]">
-        <ButtonLink href={`/verisite/scan?project=${p.id}`}>I-scan ang lugar na ito</ButtonLink>
+        {draft?.ai ? (
+          <ButtonLink href="/verisite/result">Magsumite ng report</ButtonLink>
+        ) : (
+          <ButtonLink href={`/verisite/scan?project=${p.id}`}>I-scan ang lugar na ito</ButtonLink>
+        )}
       </div>
     </>
   );

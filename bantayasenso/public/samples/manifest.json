@@ -1,0 +1,39 @@
+[
+    {
+        "id": "sign-1",
+        "mode": "sign",
+        "label": "Sample DPWH Billboard #1",
+        "image": "/samples/sign-1.jpg",
+        "lat": 14.4296,
+        "lng": 120.9367,
+        "canned": {
+            "is_project_sign": true,
+            "contract_id": "24DF0012",
+            "title": "Asset Preservation - Preventive Maintenance along Aguinaldo Hwy",
+            "contractor": "Sample Contractor Inc.",
+            "implementing_office": "Cavite 1st DEO",
+            "budget_php": 14500000,
+            "start_date": "2025-05-01",
+            "target_date": "2025-11-30",
+            "unreadable_fields": []
+        }
+    },
+    {
+        "id": "hazard-1",
+        "mode": "hazard",
+        "label": "Sample Open Trench Hazard",
+        "image": "/samples/hazard-1.jpg",
+        "lat": 14.4296,
+        "lng": 120.9367,
+        "canned": {
+            "open_excavation": true,
+            "barricade_visible": false,
+            "warning_light_visible": false,
+            "concerns": [
+                "Open excavation along road shoulder",
+                "No visible barricade or warning light"
+            ],
+            "summary": "Open trench with no visible barricade or warning light."
+        }
+    }
+]

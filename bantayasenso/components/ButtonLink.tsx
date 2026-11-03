@@ -5,22 +5,24 @@ const styles = {
   white: "bg-white shadow-[0_1px_2px_rgba(20,80,120,0.06),0_14px_30px_rgba(20,80,120,0.10)]",
 };
 
-// Main 60px-tall button that navigates to another screen.
+// Main 60px-tall button that navigates to another screen. Without `href` it submits its form.
 export default function ButtonLink({
   href,
   variant = "yellow",
   children,
 }: {
-  href: string;
+  href?: string;
   variant?: keyof typeof styles;
   children: React.ReactNode;
 }) {
-  return (
-    <Link
-      href={href}
-      className={`flex h-[60px] items-center justify-center rounded-[18px] text-lg font-bold text-[#1E2B30] no-underline hover:text-[#136AA6] ${styles[variant]}`}
-    >
+  const className = `flex h-[60px] w-full cursor-pointer items-center justify-center rounded-[18px] text-lg font-bold text-[#1E2B30] no-underline hover:text-[#136AA6] ${styles[variant]}`;
+  return href ? (
+    <Link href={href} className={className}>
       {children}
     </Link>
+  ) : (
+    <button type="submit" className={className}>
+      {children}
+    </button>
   );
 }

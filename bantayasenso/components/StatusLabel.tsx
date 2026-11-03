@@ -5,6 +5,7 @@ const statuses = {
   lampas: { label: "Lampas sa petsa", solid: "#C9342B", soft: "#B3271F", icon: "warning" },
   malapit: { label: "Malapit na sa petsa", solid: "#D9861E", soft: "#855708", icon: "clock" },
   ayon: { label: "Ayon sa plano", solid: "#2E9E6B", soft: "#1E7A50", icon: "check" },
+  tapos: { label: "Tapos na", solid: "#2E9E6B", soft: "#1E7A50", icon: "check" },
   "di-kumpirmado": { label: "Di kumpirmado", solid: "#6B7A80", soft: "#5F6E74", icon: "question" },
   bago: { label: "Bago", solid: "#6B7A80", soft: "#5F6E74", icon: "question" },
   tinitingnan: { label: "Tinitingnan", solid: "#D9861E", soft: "#855708", icon: "clock" },

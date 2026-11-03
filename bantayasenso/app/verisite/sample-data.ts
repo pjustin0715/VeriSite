@@ -28,6 +28,8 @@ export type Project = {
   place: string;
   date: string;
   image: "road" | "bridge" | "drain";
+  type: "kalsada" | "tulay" | "kanal" | "gusali";
+  near: boolean; // shortcut: fixed flag for "Malapit sa akin"; compute from GPS when the backend is wired up
   status: Status;
   progress: number; // percent done
   reports: number;
@@ -35,9 +37,10 @@ export type Project = {
 
 // Home feed, newest first.
 export const projects: Project[] = [
-  { id: "burol", name: "Kalsada sa Burol", place: "Burol Main", date: "Nob 1", image: "road", status: "malapit", progress: 18, reports: 2 },
-  { id: "salawag", name: "Tulay sa Salawag", place: "Salawag Rd", date: "Okt 28", image: "bridge", status: "ayon", progress: 25, reports: 0 },
-  { id: "aguinaldo", name: "Kanal sa Aguinaldo", place: "Salitran II", date: "Okt 20", image: "drain", status: "lampas", progress: 65, reports: 14 },
+  { id: "burol", name: "Kalsada sa Burol", place: "Burol Main", date: "Nob 1", image: "road", type: "kalsada", near: true, status: "malapit", progress: 18, reports: 2 },
+  { id: "salawag", name: "Tulay sa Salawag", place: "Salawag Rd", date: "Okt 28", image: "bridge", type: "tulay", near: true, status: "ayon", progress: 25, reports: 0 },
+  { id: "aguinaldo", name: "Kanal sa Aguinaldo", place: "Salitran II", date: "Okt 20", image: "drain", type: "kanal", near: false, status: "lampas", progress: 65, reports: 14 },
+  { id: "paliparan", name: "Kalsada sa Paliparan", place: "Paliparan III", date: "Okt 12", image: "road", type: "kalsada", near: false, status: "tapos", progress: 100, reports: 3 },
 ];
 
 // Project detail screen (W-Project).

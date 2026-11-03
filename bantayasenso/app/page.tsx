@@ -21,6 +21,20 @@ const COLOR_HEX: Record<ProjectStatusRow["status"], string> = {
   gray: "#9ca3af",
 };
 
+const RASTER_FALLBACK_STYLE = {
+  version: 8 as const,
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  sources: {
+    osm: {
+      type: "raster" as const,
+      tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      attribution: "© OpenStreetMap contributors",
+    },
+  },
+  layers: [{ id: "osm", type: "raster" as const, source: "osm" }],
+};
+
 export default function HomePage() {
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -32,6 +46,7 @@ export default function HomePage() {
   const [selected, setSelected] = useState<ProjectStatusRow | null>(null);
   const [reports, setReports] = useState<any[]>([]);
   const [showNearby, setShowNearby] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
   const [userPos, setUserPos] = useState<{ lat: number; lng: number }>(DEMO_CENTER);
   const [user, setUser] = useState<any>(null);
 
@@ -138,12 +153,14 @@ export default function HomePage() {
   useEffect(() => {
     if (!mapEl.current || mapRef.current) return;
     let isMounted = true;
+    let fallbackTimer: ReturnType<typeof setTimeout> | null = null;
 
     import("maplibre-gl")
       .then((maplibregl) => {
         if (!isMounted || !mapEl.current || mapRef.current) return;
         try {
-          maplibregl.setWorkerUrl?.("/maplibre-gl-worker.js");
+          // ?v=.cjs makes MapLibre's worker loader use a classic Worker instead of module worker
+          maplibregl.setWorkerUrl?.("/maplibre-gl-worker.js?v=.cjs");
           const initialCenter = selectedRef.current
             ? [selectedRef.current.lng, selectedRef.current.lat]
             : [DEMO_CENTER.lng, DEMO_CENTER.lat];
@@ -153,10 +170,19 @@ export default function HomePage() {
             center: initialCenter as [number, number],
             zoom: selectedRef.current ? 17 : 16,
             pitch: 55,
+            pixelRatio: Math.min(window.devicePixelRatio || 1, 2),
+            canvasContextAttributes: { powerPreference: "default" },
           });
           map.addControl(new maplibregl.GeolocateControl({ trackUserLocation: true }), "top-right");
           mapRef.current = map;
-          map.on("load", () => {
+          requestAnimationFrame(() => map.resize());
+
+          let loaded = false;
+          const onReady = () => {
+            if (loaded) return;
+            loaded = true;
+            if (fallbackTimer) clearTimeout(fallbackTimer);
+            map.resize();
             renderProjects(map);
             if (selectedRef.current) {
               const p = selectedRef.current;
@@ -166,7 +192,16 @@ export default function HomePage() {
                 .setLngLat([p.lng, p.lat])
                 .addTo(map);
             }
-          });
+          };
+
+          map.on("load", onReady);
+          fallbackTimer = setTimeout(() => {
+            if (!loaded && isMounted) {
+              map.setStyle(RASTER_FALLBACK_STYLE);
+              map.once("styledata", onReady);
+            }
+          }, 6000);
+
           map.on("moveend", () => {
             const b = map.getBounds();
             loadProjects({
@@ -176,12 +211,19 @@ export default function HomePage() {
               east: b.getEast(),
             });
           });
-        } catch {}
+        } catch {
+          setMapFailed(true);
+          setShowNearby(true);
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        setMapFailed(true);
+        setShowNearby(true);
+      });
 
     return () => {
       isMounted = false;
+      if (fallbackTimer) clearTimeout(fallbackTimer);
       selectedMarkerRef.current?.remove();
       selectedMarkerRef.current = null;
       mapRef.current?.remove();
@@ -192,7 +234,7 @@ export default function HomePage() {
   function renderProjects(map: MapLibreMap) {
     const geojson: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
-      features: projects.map((p) => ({
+      features: projectsRef.current.map((p) => ({
         type: "Feature",
         geometry: { type: "Point", coordinates: [p.lng, p.lat] },
         properties: { id: p.id, color: COLOR_HEX[p.status] },
@@ -332,9 +374,26 @@ export default function HomePage() {
     .sort((a, b) => a.distKm - b.distKm)
     .slice(0, 15);
 
+  const centerLat = selected?.lat ?? userPos.lat;
+  const centerLng = selected?.lng ?? userPos.lng;
+
   return (
-    <main className="relative h-screen w-screen overflow-hidden bg-slate-900 text-white">
-      <div ref={mapEl} className="absolute inset-0 h-full w-full" />
+    <main
+      className="relative h-screen w-screen overflow-hidden bg-slate-900 text-white"
+      style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#0f172a", color: "#ffffff" }}
+    >
+      <div
+        ref={mapEl}
+        className="absolute inset-0 h-full w-full"
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, width: "100%", height: "100%" }}
+      />
+      {mapFailed && (
+        <iframe
+          title="Map fallback"
+          src={`https://www.openstreetmap.org/export/embed.html?bbox=${centerLng - 0.01},${centerLat - 0.01},${centerLng + 0.01},${centerLat + 0.01}&layer=mapnik&marker=${centerLat},${centerLng}`}
+          style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", border: 0 }}
+        />
+      )}
 
       {/* Top banner + legend */}
       <div className="pointer-events-none absolute inset-x-3 top-3 flex flex-col gap-2">

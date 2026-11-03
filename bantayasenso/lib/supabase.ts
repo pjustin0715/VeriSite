@@ -1,5 +1,12 @@
 import { createClient } from "@supabase/supabase-js";
 
+if (typeof Object.hasOwn !== "function") {
+    Object.hasOwn = (obj, prop) => Object.prototype.hasOwnProperty.call(obj, prop);
+}
+if (typeof globalThis !== "undefined" && typeof globalThis.structuredClone !== "function") {
+    globalThis.structuredClone = (val: any) => JSON.parse(JSON.stringify(val));
+}
+
 export const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!

@@ -34,8 +34,9 @@ function ScanInner() {
       .select("id")
       .eq("contract_id", cid)
       .maybeSingle();
+
     if (!existing && cid.length >= 4) {
-      // Handle OCR 0 vs O confusion at position 2 (e.g. 250D0106 vs 25OD0106)
+      // 1. Check 0 vs O swap at position 2
       const altChar = cid[2] === "0" ? "O" : cid[2] === "O" ? "0" : cid[2];
       const alt = cid.slice(0, 2) + altChar + cid.slice(3);
       if (alt !== cid) {
@@ -47,6 +48,26 @@ function ScanInner() {
         existing = altHit;
       }
     }
+
+    // 2. Fuzzy match: handle dropped letter (e.g. 25D0106) or swapped letters (e.g. 25DO0106)
+    if (!existing && cid.length >= 6) {
+      const year = cid.slice(0, 2);
+      const seq = cid.slice(-4);
+      if (/^\d{2}$/.test(year) && /^\d{4}$/.test(seq)) {
+        const { data: candidates } = await supabase
+          .from("projects")
+          .select("id, contract_id")
+          .ilike("contract_id", `${year}%${seq}`);
+        if (candidates && candidates.length > 0) {
+          const midLetters = cid.slice(2, -4);
+          const best = candidates.find((c) =>
+            [...midLetters].some((ch) => c.contract_id?.includes(ch))
+          ) || candidates[0];
+          existing = best;
+        }
+      }
+    }
+
     if (existing) {
       router.push(`/?project=${existing.id}`);
       return true;

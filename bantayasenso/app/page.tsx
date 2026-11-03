@@ -22,6 +22,7 @@ export default function HomePage() {
   const mapEl = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const selectedRef = useRef<ProjectStatusRow | null>(null);
+  const selectedMarkerRef = useRef<any>(null);
   const [projects, setProjects] = useState<ProjectStatusRow[]>([]);
   const [selected, setSelected] = useState<ProjectStatusRow | null>(null);
   const [reports, setReports] = useState<any[]>([]);
@@ -55,7 +56,16 @@ export default function HomePage() {
   async function selectProject(p: ProjectStatusRow) {
     selectedRef.current = p;
     setSelected(p);
-    mapRef.current?.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55 });
+    mapRef.current?.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55, offset: [0, -140] });
+
+    import("maplibre-gl").then((maplibregl) => {
+      if (!mapRef.current) return;
+      selectedMarkerRef.current?.remove();
+      selectedMarkerRef.current = new maplibregl.Marker({ color: "#ef4444" })
+        .setLngLat([p.lng, p.lat])
+        .addTo(mapRef.current);
+    });
+
     const { data } = await supabase
       .from("reports")
       .select("id, kind, note, photo_path, ai_flags, status, admin_response, created_at")
@@ -95,13 +105,20 @@ export default function HomePage() {
       map.on("load", () => {
         renderProjects(map);
         if (selectedRef.current) {
-          map.flyTo({ center: [selectedRef.current.lng, selectedRef.current.lat], zoom: 17, pitch: 55 });
+          const p = selectedRef.current;
+          map.flyTo({ center: [p.lng, p.lat], zoom: 17, pitch: 55, offset: [0, -140] });
+          selectedMarkerRef.current?.remove();
+          selectedMarkerRef.current = new maplibregl.Marker({ color: "#ef4444" })
+            .setLngLat([p.lng, p.lat])
+            .addTo(map);
         }
       });
     });
 
     return () => {
       isMounted = false;
+      selectedMarkerRef.current?.remove();
+      selectedMarkerRef.current = null;
       mapRef.current?.remove();
       mapRef.current = null;
     };
@@ -267,7 +284,16 @@ export default function HomePage() {
               </span>
               <h2 className="text-base font-bold leading-snug">{selected.title}</h2>
             </div>
-            <button onClick={() => setSelected(null)} className="text-slate-400 text-lg px-2">✕</button>
+            <button
+              onClick={() => {
+                setSelected(null);
+                selectedMarkerRef.current?.remove();
+                selectedMarkerRef.current = null;
+              }}
+              className="text-slate-400 text-lg px-2"
+            >
+              ✕
+            </button>
           </div>
 
           <p className="mt-1.5 rounded-lg bg-slate-800 px-3 py-1.5 text-xs font-medium text-amber-300">

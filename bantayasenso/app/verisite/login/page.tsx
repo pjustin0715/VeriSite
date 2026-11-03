@@ -6,7 +6,7 @@ import { useState } from "react";
 import ButtonLink from "@/components/ButtonLink";
 import PageHeader from "@/components/PageHeader";
 import TextField from "@/components/TextField";
-import { logIn } from "../data";
+import { logIn, loginWithGoogle } from "../data";
 
 const DEMO = { id: "maria_s", password: "verisite123" };
 
@@ -60,6 +60,16 @@ export default function LoginPage() {
           </p>
         )}
         <ButtonLink disabled={busy}>Mag-login</ButtonLink>
+        <ButtonLink
+          variant="white"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            loginWithGoogle().catch(() => setBusy(false));
+          }}
+        >
+          Mag-login gamit ang Google
+        </ButtonLink>
       </form>
 
       <p className="mt-2 text-center text-lg font-semibold">

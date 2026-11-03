@@ -277,9 +277,10 @@ export function signChecks(p: ProjectRecord, sign: SignReading | null) {
   });
 }
 
-// shortcut: matches on Contract ID only; add "nearest project by GPS" when location is wired up.
+const foldCid = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "").replace(/[OD]/g, "0");
 export const matchProject = (projects: ProjectRecord[], sign: SignReading | null) =>
-  projects.find((p) => sign?.contract_id && p.contractId === sign.contract_id);
+  projects.find((p) => sign?.contract_id && p.contractId.toUpperCase() === sign.contract_id.toUpperCase()) ??
+  projects.find((p) => sign?.contract_id && p.contractId && foldCid(p.contractId) === foldCid(sign.contract_id));
 
 // Turns sample data (dates as day offsets) into a fresh State for `today`.
 type Offsets = { start: number; target: number; posted: number };

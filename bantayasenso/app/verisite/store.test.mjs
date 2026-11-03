@@ -59,6 +59,7 @@ test("paskil vs record, and matching on Contract ID", () => {
   assert.deepEqual(signChecks(p, sign).filter((r) => r.wrong).map((r) => r.label), ["Halaga"]);
   assert.equal(signChecks(p, null).some((r) => r.wrong), false);
   assert.equal(matchProject(fresh().projects, sign).id, "aguinaldo");
+  assert.equal(matchProject(fresh().projects, { ...sign, contract_id: "26KCDO42" }).id, "aguinaldo");
   assert.equal(matchProject(fresh().projects, null), undefined);
 });
 

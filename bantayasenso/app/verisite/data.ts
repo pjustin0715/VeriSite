@@ -1,21 +1,32 @@
 // The one VeriSite data layer: projects, reports, followed projects, the current user and updates.
-// shortcut: saved in this browser's localStorage; replace these functions with backend calls (Supabase) later.
+// Synced with Supabase (DPWH projects, reports, photos storage, and Google OAuth) while keeping local state + judge demo account working.
 // Client-only: import it from "use client" components.
 import { useMemo, useSyncExternalStore } from "react";
+import {
+  supabase,
+  DEMO_CENTER,
+  signInWithOAuth,
+  getUserDisplayName,
+  normContractId,
+  type ProjectStatusRow,
+} from "@/lib/supabase";
 import type { AiResult } from "./ai";
 import { sample } from "./sample-data";
 import {
-  addAccount, addReport, checkSignup, confirmReports, findAccount, normMobile, readUpdate, seedState, setPassword, setSiteStatus, toggleFollowed, upgrade,
-  type Report, type ReportStatus, type SignupErrors, type SignupInput, type State,
+  addAccount, addDays, addReport, badgeFor, checkSignup, confirmReports, findAccount, normMobile, readUpdate, seedState, setPassword, setSiteStatus, toggleFollowed, upgrade,
+  type BadgeName, type ProjectRecord, type Report, type ReportStatus, type SignupErrors, type SignupInput, type State,
 } from "./store";
 
 const KEY = "verisite:v1";
 const CHANGED = "verisite:changed";
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const today = () => new Date().toLocaleDateString("sv"); // local YYYY-MM-DD
 
 let cache: { raw: string | null; state: State } | null = null;
 let memory: string | null = null; // used when localStorage is blocked (private mode)
+let userCoords = { ...DEMO_CENTER };
+let syncStarted = false;
 
 function readRaw() {
   try {
@@ -33,7 +44,224 @@ function writeRaw(raw: string) {
   }
 }
 
+function inferCategory(title: string): { image: ProjectRecord["image"]; type: ProjectRecord["type"] } {
+  const t = title.toLowerCase();
+  if (/\b(bridge|tulay|flyover|overpass|viaduct)\b/.test(t)) return { image: "bridge", type: "tulay" };
+  if (/\b(flood|drain|drainage|canal|kanal|river|dike|revetment|slope|sewer|waterway|culvert)\b/.test(t))
+    return { image: "drain", type: "kanal" };
+  if (/\b(building|school|multi-purpose|multipurpose|hospital|gymnasium|hall|facility|center|gusali)\b/.test(t))
+    return { image: "road", type: "gusali" };
+  return { image: "road", type: "kalsada" };
+}
+
+export function mapSupabaseProject(row: ProjectStatusRow, existing?: ProjectRecord): ProjectRecord {
+  const { image, type } = inferCategory(row.title || "");
+  const distKm = Math.hypot(row.lat - userCoords.lat, row.lng - userCoords.lng) * 111;
+  const office = row.implementing_office || "DPWH District Office";
+  const place = office.replace(/District Engineering Office|DEO/gi, "").trim() || row.contract_id || "DPWH";
+  return {
+    id: row.id,
+    name: row.title,
+    place,
+    address: row.contract_id ? `${office} · ${row.contract_id}` : office,
+    image,
+    type,
+    near: distKm <= 8,
+    contractId: row.contract_id || "",
+    contractor: row.contractor || "Unlisted",
+    office,
+    budget: Number(row.budget_php || 0),
+    startDate: row.start_date || addDays(today(), -90),
+    targetDate: row.target_date || addDays(today(), 30),
+    postedAt: row.source_as_of || today(),
+    progress: Math.round(Number(row.progress_pct || 0)),
+    record: row.dpwh_status || (row.completed ? "Completed per DPWH" : "On-Going"),
+    reportCount: Math.max(Number(row.total_reports || 0), existing?.reportCount ?? 0),
+    lng: row.lng,
+    lat: row.lat,
+  };
+}
+
+function mergeProjectsIntoState(rows: ProjectStatusRow[]) {
+  if (!rows.length) return;
+  const s = load();
+  const byId = new Map(s.projects.map((p) => [p.id, p]));
+  for (const r of rows) {
+    byId.set(r.id, mapSupabaseProject(r, byId.get(r.id)));
+  }
+  const merged = Array.from(byId.values()).slice(0, 350);
+  save({ ...s, projects: merged });
+}
+
+export async function loadViewportProjects(bounds?: { south: number; north: number; west: number; east: number }) {
+  const b = bounds || {
+    south: userCoords.lat - 0.12,
+    north: userCoords.lat + 0.12,
+    west: userCoords.lng - 0.12,
+    east: userCoords.lng + 0.12,
+  };
+  const { data } = await supabase
+    .from("project_status")
+    .select("*")
+    .gte("lat", b.south)
+    .lte("lat", b.north)
+    .gte("lng", b.west)
+    .lte("lng", b.east)
+    .limit(150);
+  if (data && data.length > 0) {
+    mergeProjectsIntoState(data as ProjectStatusRow[]);
+  }
+}
+
+export async function ensureProjectByContractId(rawCid?: string | null): Promise<ProjectRecord | null> {
+  const cid = normContractId(rawCid);
+  if (!cid) return null;
+
+  const variants = [cid];
+  if (cid.length >= 6) {
+    const year = cid.slice(0, 2);
+    const mid = cid.slice(2, -4);
+    const seq = cid.slice(-4);
+    const opts = [...mid].map((ch, idx) => {
+      if (!"0OD".includes(ch)) return [ch];
+      const pool = idx === 0 ? ["O", "D"] : ["0", "O", "D"];
+      return [ch, ...pool.filter((x) => x !== ch)];
+    });
+    const prefixes = opts.reduce<string[]>(
+      (acc, list) => acc.flatMap((p) => list.map((c) => p + c)),
+      [""]
+    );
+    for (const m of prefixes) {
+      const v = year + m + seq;
+      if (!variants.includes(v)) variants.push(v);
+    }
+  }
+
+  const { data: hits } = await supabase
+    .from("project_status")
+    .select("*")
+    .in("contract_id", variants);
+
+  let best = variants
+    .map((v) => (hits as ProjectStatusRow[] | null)?.find((h) => h.contract_id === v))
+    .find(Boolean);
+
+  if (!best && cid.length >= 6) {
+    const year = cid.slice(0, 2);
+    const seq = cid.slice(-4);
+    if (/^\d{2}$/.test(year) && /^\d{4}$/.test(seq)) {
+      const { data: candidates } = await supabase
+        .from("project_status")
+        .select("*")
+        .ilike("contract_id", `${year}%${seq}`)
+        .limit(20);
+      if (candidates && candidates.length > 0) {
+        const midLetters = cid.slice(2, -4);
+        best =
+          (candidates as ProjectStatusRow[]).find((c) =>
+            [...midLetters].some((ch) => c.contract_id?.slice(2, -4).includes(ch))
+          ) || (candidates[0] as ProjectStatusRow);
+      }
+    }
+  }
+
+  if (best) {
+    mergeProjectsIntoState([best]);
+    return mapSupabaseProject(best);
+  }
+  return null;
+}
+
+function syncOAuthUser(sessionUser: any) {
+  if (!sessionUser || sessionUser.is_anonymous) return;
+  const rawName = getUserDisplayName(sessionUser)
+    .replace(/[^A-Za-z0-9_.]/g, "_")
+    .replace(/^[^A-Za-z]+/, "u_")
+    .slice(0, 20);
+  const username = rawName.length >= 3 ? rawName : `user_${rawName}`;
+  const s = load();
+  const existing = findAccount(s, username);
+  if (!existing) {
+    const nextAccounts = [
+      ...s.accounts,
+      { username, mobile: "09000000000", password: "oauth", streak: 1, lastReportDay: today(), followed: [] },
+    ];
+    save({ ...s, accounts: nextAccounts, me: username });
+  } else if (s.me !== existing.username) {
+    save({ ...s, me: existing.username });
+  }
+}
+
+async function syncReportsFromSupabase() {
+  const { data } = await supabase
+    .from("reports")
+    .select("id, project_id, note, photo_path, ai_flags, status, created_at, author_name")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (!data || !data.length) return;
+  const s = load();
+  const existingIds = new Set(s.reports.map((r) => r.id));
+  const statusMap: Record<string, ReportStatus> = {
+    open: "bago",
+    acknowledged: "tinitingnan",
+    resolved: "naaksyunan",
+  };
+  const added: Report[] = [];
+  for (const r of data as any[]) {
+    if (existingIds.has(r.id)) continue;
+    const user = r.author_name || "Citizen";
+    const userCount = s.reports.filter((x) => x.user === user).length + 1;
+    const badge: BadgeName = badgeFor(userCount) ?? "Baguhan";
+    const photoUrl = r.photo_path
+      ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/photos/${r.photo_path}`
+      : "/verisite/rep-site.png";
+    const issues: string[] = Array.isArray(r.ai_flags?.issues) && r.ai_flags.issues.length
+      ? r.ai_flags.issues
+      : ["Report mula sa mamamayan"];
+    added.push({
+      id: r.id,
+      projectId: r.project_id,
+      user,
+      badge,
+      createdAt: r.created_at,
+      photo: photoUrl,
+      issues,
+      note: r.note || "",
+      status: statusMap[r.status] || "bago",
+      confirmed: r.status !== "open",
+    });
+  }
+  if (added.length > 0) {
+    save({ ...s, reports: [...added, ...s.reports] });
+  }
+}
+
+function startBackgroundSync() {
+  if (syncStarted || typeof window === "undefined") return;
+  syncStarted = true;
+
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    if (session?.user && !session.user.is_anonymous) syncOAuthUser(session.user);
+  });
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user && !session.user.is_anonymous) syncOAuthUser(session.user);
+  });
+
+  navigator.geolocation?.getCurrentPosition(
+    (pos) => {
+      userCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+      loadViewportProjects();
+    },
+    () => {
+      loadViewportProjects();
+    }
+  );
+  loadViewportProjects();
+  syncReportsFromSupabase();
+}
+
 function load(): State {
+  startBackgroundSync();
   const raw = readRaw();
   if (cache && cache.raw === raw) return cache.state;
   let state: State | null = null;
@@ -74,11 +302,44 @@ function subscribe(onChange: () => void) {
 export const useData = () => useSyncExternalStore(subscribe, load, () => null);
 export const getData = load;
 
-// Saves the report and updates the user's streak and count and the project's report count.
-// Sending the same scan again (same draftId) returns the first report instead of saving twice.
+export async function loginWithGoogle() {
+  try {
+    sessionStorage.setItem("oauth_return", "/verisite/home");
+  } catch {}
+  await signInWithOAuth();
+}
+
+// Saves the report locally and syncs to Supabase Storage + `public.reports` when reporting on a Supabase project.
 export async function sendReport(input: Pick<Report, "projectId" | "photo" | "issues" | "note" | "draftId">): Promise<Report> {
-  const { state, report } = addReport(load(), { ...input, photo: await shrink(input.photo) }, new Date());
-  if (state !== load()) save(state);
+  const shrunk = await shrink(input.photo);
+  const current = load();
+  const { state, report } = addReport(current, { ...input, photo: shrunk }, new Date());
+  if (state !== current) save(state);
+
+  if (UUID_RE.test(input.projectId)) {
+    (async () => {
+      try {
+        const res = await fetch(shrunk);
+        const blob = await res.blob();
+        const uid = crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        const photoPath = `${uid}.jpg`;
+        await supabase.storage.from("photos").upload(photoPath, blob, { contentType: "image/jpeg" });
+        const base = {
+          project_id: input.projectId,
+          kind: "update",
+          note: input.note.trim().slice(0, 500) || null,
+          photo_path: photoPath,
+          ai_flags: { issues: input.issues },
+        };
+        const { error } = await supabase.from("reports").insert({
+          ...base,
+          author_name: (state.me || "Citizen").slice(0, 80),
+        });
+        if (error) await supabase.from("reports").insert(base);
+      } catch {}
+    })();
+  }
+
   return report;
 }
 
@@ -91,8 +352,6 @@ export async function markRead(updateId: string) {
   if (next !== load()) save(next);
 }
 
-// Accounts. shortcut: local mock accounts and a code shown on screen instead of an SMS; swap for Supabase Auth (phone OTP) later.
-// The password is never stored as typed: SHA-256 of "username:password" (crypto.subtle needs https or localhost).
 async function hash(username: string, password: string) {
   if (!crypto.subtle) throw new Error("Insecure context");
   const bytes = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${username.toLowerCase()}:${password}`));
@@ -108,6 +367,7 @@ export async function logIn(id: string, password: string) {
 export function logOut() {
   clearDraft();
   save({ ...load(), me: null });
+  supabase.auth.signOut().catch(() => {});
 }
 
 // A signup or password reset waiting for its code (Verify screen), kept per tab like the scan draft.
@@ -123,7 +383,6 @@ const parsePending = (raw: string | null): Pending | null => {
   }
 };
 const pendingRaw = () => session(PENDING);
-// undefined during the server render, null when there is nothing waiting for a code.
 export function usePending() {
   const raw = useSyncExternalStore(subscribe, pendingRaw, () => undefined);
   return useMemo(() => (raw === undefined ? undefined : parsePending(raw)), [raw]);
@@ -134,7 +393,6 @@ function setPending(p: Pending | null) {
   window.dispatchEvent(new Event(CHANGED));
 }
 
-// Checks the signup form; when it is valid, "sends" a code and returns no errors.
 export async function startSignup(input: SignupInput): Promise<SignupErrors> {
   const errors = checkSignup(load(), input);
   if (Object.keys(errors).length) return errors;
@@ -142,7 +400,6 @@ export async function startSignup(input: SignupInput): Promise<SignupErrors> {
   setPending({ kind: "signup", username, mobile: normMobile(input.mobile)!, password: await hash(username, input.password), code: newCode(), sentAt: Date.now() });
   return {};
 }
-// Forgot password: the account's mobile number and a new password, confirmed with a code.
 export async function startReset(mobile: string, password: string): Promise<{ mobile?: string; password?: string }> {
   const m = normMobile(mobile);
   const a = m && load().accounts.find((x) => x.mobile === m);
@@ -158,7 +415,6 @@ export function resendCode() {
   const p = parsePending(pendingRaw());
   if (p) setPending({ ...p, code: newCode(), sentAt: Date.now() });
 }
-// Returns an error message, or null once the account is made (or the password changed) and logged in.
 export function verifyCode(code: string): string | null {
   const p = parsePending(pendingRaw());
   if (!p) return "Nag-expire na ang code. Magsimula ulit.";
@@ -166,7 +422,7 @@ export function verifyCode(code: string): string | null {
   if (code !== p.code) return "Mali ang code. Tingnan ulit o pindutin ang Ipadala ulit.";
   const s = load();
   try {
-    save(p.kind === "signup" ? addAccount(s, { username: p.username, mobile: p.mobile, password: p.password }) :{ ...setPassword(s, p.username, p.password), me: p.username });
+    save(p.kind === "signup" ? addAccount(s, { username: p.username, mobile: p.mobile, password: p.password }) : { ...setPassword(s, p.username, p.password), me: p.username });
   } catch {
     setPending(null);
     return "May gumawa na ng account na ito. Mag-sign up ulit gamit ang ibang username o numero.";
@@ -175,7 +431,6 @@ export function verifyCode(code: string): string | null {
   return null;
 }
 
-// Laki ng letra: a device setting (not per account), applied by the script in layout.tsx so it holds after a refresh.
 const TEXT = "verisite:text";
 export const useLargeText = () => useSyncExternalStore(subscribe, () => document.documentElement.dataset.text === "malaki", () => false);
 export function setLargeText(on: boolean) {
@@ -186,17 +441,19 @@ export function setLargeText(on: boolean) {
   window.dispatchEvent(new Event(CHANGED));
 }
 
-// LGU actions on a site (LGUDetail). Both skip saving when nothing changes, so a double tap is harmless.
 export async function setStatus(projectId: string, status: ReportStatus) {
   const next = setSiteStatus(load(), projectId, status);
   if (next !== load()) save(next);
+  if (UUID_RE.test(projectId)) {
+    const dbStatus = status === "naaksyunan" ? "resolved" : status === "tinitingnan" ? "acknowledged" : "open";
+    supabase.from("reports").update({ status: dbStatus }).eq("project_id", projectId).then(() => {});
+  }
 }
 export async function confirmSite(projectId: string) {
   const next = confirmReports(load(), projectId);
   if (next !== load()) save(next);
 }
 
-// Saved reports keep a small copy of the photo so localStorage (about 5 MB) holds many reports.
 async function shrink(src: string, max = 480) {
   const img = new Image();
   img.src = src;
@@ -209,7 +466,6 @@ async function shrink(src: string, max = 480) {
   return canvas.toDataURL("image/jpeg", 0.7);
 }
 
-// The scan in progress (Scan -> Loading -> Result), kept per tab so a refresh mid-scan keeps the photo.
 export type Draft = { id: string; photo: string; projectId?: string; ai?: AiResult };
 const DRAFT = "verisite:draft";
 
@@ -230,7 +486,6 @@ function parseDraft(raw: string | null): Draft | null {
   }
 }
 export const getDraft = () => parseDraft(draftRaw());
-// Live draft for rendering; null during the server render.
 export function useDraft() {
   const raw = useSyncExternalStore(subscribe, draftRaw, () => null);
   return useMemo(() => parseDraft(raw), [raw]);

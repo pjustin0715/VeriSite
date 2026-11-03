@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
   const b64 = Buffer.from(await file.arrayBuffer()).toString("base64");
   const prompt =
     mode === "sign"
-      ? "Read this Philippine government construction billboard (DPWH/LGU paskil). Extract only facts visible in the photo. DPWH contract IDs are strictly 8 characters formatted as 2-digit year, 2-letter district office code, and 4-digit sequence number (e.g. 25OD0106, 24DF0012). Make sure to capture both letters of the office code. Convert dates to YYYY-MM-DD and budget to a plain PHP number. Put any field you cannot clearly read in unreadable_fields."
+      ? "Read this Philippine government construction billboard (DPWH/LGU paskil). Extract only facts visible in the photo. DPWH contract IDs follow this exact 8-character pattern: 2-digit year + 2-letter district office code + 4-digit sequence number (e.g. 25OD0106, 24DF0012). The contract ID often appears unlabeled as the first code at the top or start of the project title — look for a code matching this pattern even if it is not explicitly labeled 'Contract ID'. Make sure to capture both letters of the office code. Convert dates to YYYY-MM-DD and budget to a plain PHP number. Put any field you cannot clearly read in unreadable_fields."
       : "Inspect this road-work photo for pedestrian/motorist hazards. Set booleans to null if unclear from the angle/lighting. Use cautious, advisory wording.";
 
   try {

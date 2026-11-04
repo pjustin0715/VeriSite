@@ -6,7 +6,7 @@ import Icon from "@/components/Icon";
 import PageHeader from "@/components/PageHeader";
 import StatusLabel from "@/components/StatusLabel";
 import { today, useData } from "../data";
-import { shortDate, statusOrder, userOf, type Report } from "../store";
+import { displayText, shortDate, statusOrder, userOf, type Report } from "../store";
 
 const steps = [
   ["bago", "Natanggap"],
@@ -62,7 +62,7 @@ export default function MyReportsPage() {
           <Card key={r.id} href={p && `/verisite/project/${p.id}?from=reports`} className="px-4 py-3.5">
             <span className="flex items-start justify-between gap-2">
               <span className="min-w-0">
-                <strong className="block text-xl leading-[1.2] font-bold">{p?.place ?? "Wala na ang proyekto"}</strong>
+                <strong className="block text-xl leading-[1.2] font-bold">{p ? displayText(p.place) : "Wala na ang proyekto"}</strong>
                 <span className="block text-base font-semibold text-muted">
                   {issue}
                   {more} • {shortDate(r.createdAt)}

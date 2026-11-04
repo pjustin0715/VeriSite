@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Card from "@/components/Card";
 import StatusLabel from "@/components/StatusLabel";
-import { shortDate, type Project } from "@/app/verisite/store";
+import { displayText, shortDate, type Project } from "@/app/verisite/store";
 
 // News-feed card: illustration with status and name, then a progress bar and report count.
 // `from` tells the project's Back button where to return (see ProjectView).
@@ -16,9 +16,9 @@ export default function ProjectCard({ project: p, from, eager }: { project: Proj
           <StatusLabel status={p.status} variant="soft" />
         </span>
         <span className="absolute inset-x-3.5 bottom-[9px] max-w-[calc(100%-28px)] text-xl leading-[1.1] font-bold tracking-[-0.2px] text-white">
-          <span className="line-clamp-2 max-h-[2.3em] overflow-hidden break-words">{p.name}</span>
+          <span className="line-clamp-2 max-h-[2.3em] overflow-hidden break-words">{displayText(p.name)}</span>
           <span className="mt-0.5 block truncate text-15 font-medium text-[#DCEBE6]">
-            {p.place} • {shortDate(p.postedAt)}
+            {displayText(p.place)} • {shortDate(p.postedAt)}
           </span>
         </span>
       </span>

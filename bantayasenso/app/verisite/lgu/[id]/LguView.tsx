@@ -7,7 +7,7 @@ import Icon from "@/components/Icon";
 import NotFound from "@/components/NotFound";
 import PageHeader from "@/components/PageHeader";
 import { confirmSite, setStatus, today, useData } from "../../data";
-import { projectsOf, reportsFor, type Project, type Report, type ReportStatus } from "../../store";
+import { displayText, projectsOf, reportsFor, type Project, type Report, type ReportStatus } from "../../store";
 
 const choices: [ReportStatus, string][] = [
   ["bago", "Bago"],
@@ -58,7 +58,7 @@ export default function LguView() {
   const ring = 2 * Math.PI * 34;
 
   return (
-    <PageHeader back="/verisite/priority" title={p.name} subtitle={`${p.address.split(",")[0]} • ${p.reportCount} report`}>
+    <PageHeader back="/verisite/priority" title={displayText(p.name)} subtitle={`${displayText(p.address.split(",")[0])} • ${p.reportCount} report`}>
       <section className="flex items-center gap-3.5 rounded-[22px] bg-linear-135 from-primary to-[#4FB2EC] px-4 py-3 text-white shadow-[0_12px_24px_rgba(20,100,160,.28)]">
         <svg width="84" height="84" viewBox="0 0 84 84" role="img" aria-label={`Urgency ${score.total} sa 100`} className="flex-none">
           <circle cx="42" cy="42" r="34" fill="none" stroke="#FFFFFF" strokeOpacity=".25" strokeWidth="9" />

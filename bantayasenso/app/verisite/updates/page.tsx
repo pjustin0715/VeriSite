@@ -6,7 +6,7 @@ import Card from "@/components/Card";
 import Icon, { type IconName } from "@/components/Icon";
 import PageHeader from "@/components/PageHeader";
 import { markRead, today, useData } from "../data";
-import { addDays, shortDate, updatesOf, type UpdateKind } from "../store";
+import { addDays, displayText, shortDate, updatesOf, type UpdateKind } from "../store";
 
 const kinds: Record<UpdateKind, { title: string; icon: IconName; color: string }> = {
   tinitingnan: { title: "Tinitingnan na ang report mo", icon: "clock", color: "#1C86CC" },
@@ -51,7 +51,7 @@ export default function UpdatesPage() {
                 markRead(u.id);
                 if (p) router.push(`/verisite/project/${p.id}?from=updates`);
               }}
-              aria-label={`${k.title}, ${p?.place ?? "wala na ang proyekto"}${u.read ? "" : ", bago"}`}
+              aria-label={`${k.title}, ${p ? displayText(p.place) : "wala na ang proyekto"}${u.read ? "" : ", bago"}`}
               className="flex w-full cursor-pointer items-center gap-3.5 px-3.5 py-3 text-left"
             >
               <span className="flex size-[44px] flex-none items-center justify-center rounded-[14px]" style={{ background: k.color }}>
@@ -60,7 +60,7 @@ export default function UpdatesPage() {
               <span className="min-w-0 grow">
                 <span className="block text-lg leading-[1.2] font-bold">{k.title}</span>
                 <span className="block text-base font-semibold text-muted">
-                  {p?.place ?? "Wala na ang proyekto"} • {ago(u.createdAt)}
+                  {p ? displayText(p.place) : "Wala na ang proyekto"} • {ago(u.createdAt)}
                 </span>
               </span>
               {!u.read && <span aria-hidden="true" className="size-2.5 flex-none rounded-full bg-lampas" />}

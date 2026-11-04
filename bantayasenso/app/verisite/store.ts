@@ -405,3 +405,47 @@ export function seedState(sample: Sample, today: string): State {
     nextReportNo: sample.nextReportNo,
   };
 }
+
+// Keeps only the projects `keep` accepts, plus the reports, updates and follows that point at them.
+// data.ts shows real backend projects or sample ones, never both.
+export function onlyProjects(s: State, keep: (projectId: string) => boolean): State {
+  return {
+    ...s,
+    projects: s.projects.filter((p) => keep(p.id)),
+    reports: s.reports.filter((r) => keep(r.projectId)),
+    updates: s.updates.filter((u) => keep(u.projectId)),
+    accounts: s.accounts.map((a) => ({ ...a, followed: a.followed.filter(keep) })),
+  };
+}
+// Puts back what onlyProjects(stored, keep) hid, so saving the shown state doesn't erase the other mode's data.
+export function withHidden(s: State, stored: State, keep: (projectId: string) => boolean): State {
+  const hidden = onlyProjects(stored, (id) => !keep(id));
+  const shownIds = new Set(s.projects.map((p) => p.id));
+  return {
+    ...s,
+    projects: [...s.projects, ...hidden.projects.filter((p) => !shownIds.has(p.id))],
+    reports: [...hidden.reports, ...s.reports],
+    updates: [...hidden.updates, ...s.updates],
+    accounts: s.accounts.map((a) => ({ ...a, followed: [...(hidden.accounts.find((h) => h.username === a.username)?.followed ?? []), ...a.followed] })),
+  };
+}
+
+// Display only: backend text in ALL CAPS reads as Title Case. Mixed-case text, codes with digits,
+// known abbreviations and Roman numerals stay as they are. Never use the result for searching or matching.
+const CAPS = new Set("DPWH LGU NCR CAR BARMM DEO SDEO RO PNP BFP DOH DILG DOTR DEPED NHA HOA LRT MRT NLEX SLEX MVUC CALABARZON MIMAROPA SOCCSKSARGEN PCCP RCBC RCPC RCDG".split(" "));
+const SMALL = new Set("of and the at to for in on along with de del la sa ng na mga".split(" "));
+const ROMAN = /^(X{0,3})(IX|IV|V?I{0,3})$/;
+export function displayText(text: string) {
+  if (/\p{Ll}/u.test(text)) return text;
+  let first = true;
+  return text.replace(/[\p{L}\p{N}]+/gu, (w, at: number) => {
+    const isFirst = first;
+    first = false;
+    if (/\d/.test(w)) return /^\d+(ST|ND|RD|TH)$/.test(w) ? w.toLowerCase() : w;
+    // A lone word in parentheses, e.g. "(LZ)", is usually a code.
+    if (CAPS.has(w) || ROMAN.test(w) || (text[at - 1] === "(" && text[at + w.length] === ")")) return w;
+    const lower = w.toLowerCase();
+    if (text[at - 1] === "'" || (!isFirst && SMALL.has(lower))) return lower;
+    return lower[0].toUpperCase() + lower.slice(1);
+  });
+}

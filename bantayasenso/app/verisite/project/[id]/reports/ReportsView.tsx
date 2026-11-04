@@ -8,7 +8,7 @@ import NotFound from "@/components/NotFound";
 import PageHeader from "@/components/PageHeader";
 import ReportRow from "@/components/ReportRow";
 import { today, useData } from "../../../data";
-import { projectsOf, reportsFor } from "../../../store";
+import { displayText, projectsOf, reportsFor } from "../../../store";
 
 const PAGE = 10;
 
@@ -32,7 +32,7 @@ export default function ReportsView() {
   more.set("n", String(n + PAGE));
 
   return (
-    <PageHeader back={back} title="Lahat ng report" subtitle={`${p.name} • ${reports.length} report`}>
+    <PageHeader back={back} title="Lahat ng report" subtitle={`${displayText(p.name)} • ${reports.length} report`}>
       {reports.length ? (
         <Card className="px-4 py-1">
           {reports.slice(0, n).map((r) => (

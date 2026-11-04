@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { sample } from "./sample-data.ts";
 import {
-  addAccount, addReport, badgeFor, checkSignup, confirmReports, findAccount, matchProject, normMobile, priorityOf, projectsOf, readUpdate, reportsFor,
+  addAccount, addReport, badgeFor, checkSignup, confirmReports, displayText, findAccount, onlyProjects, withHidden, matchProject, normMobile, priorityOf, projectsOf, readUpdate, reportsFor,
   seedState, setSiteStatus, signChecks, toggleFollowed, updatesOf, upgrade, userOf,
 } from "./store.ts";
 
@@ -170,4 +170,37 @@ test("updates: LGU status moves and followed projects", () => {
   const read = readUpdate({ ...done, me: "maria_s" }, forMaria[0].id);
   assert.equal(userOf(read, today).unread, unread - 1);
   assert.equal(readUpdate(read, forMaria[0].id), read, "reading twice changes nothing");
+});
+
+test("real and sample projects are never shown together, and saving keeps the hidden side", () => {
+  const isSample = (id) => sample.projects.some((p) => p.id === id);
+  const real = { ...fresh().projects[0], id: "real-1" };
+  const stored = { ...fresh(), projects: [...fresh().projects, real], reports: [...fresh().reports, { ...fresh().reports[0], id: "r-real", projectId: "real-1" }] };
+  stored.accounts = stored.accounts.map((a) => ({ ...a, followed: [...a.followed, "real-1"] }));
+  const keep = (id) => !isSample(id);
+  const shown = onlyProjects(stored, keep);
+  assert.deepEqual(shown.projects.map((p) => p.id), ["real-1"]);
+  assert.deepEqual(shown.reports.map((r) => r.id), ["r-real"]);
+  assert.deepEqual(shown.updates, []);
+  assert.deepEqual(shown.accounts[0].followed, ["real-1"]);
+  assert.deepEqual(projectsOf(shown, today).map((p) => p.id), ["real-1"]);
+  const back = withHidden(shown, stored, keep);
+  assert.equal(back.projects.length, stored.projects.length);
+  assert.equal(back.reports.length, stored.reports.length);
+  assert.equal(back.updates.length, stored.updates.length);
+  assert.deepEqual(back.accounts[0].followed.toSorted(), stored.accounts[0].followed.toSorted());
+});
+
+test("display text: ALL CAPS becomes readable, codes and abbreviations stay", () => {
+  assert.equal(
+    displayText("CONSTRUCTION OF MULTI-PURPOSE BUILDING ALONG C-5 ROAD, BRGY. SAN ISIDRO, PHASE II"),
+    "Construction of Multi-Purpose Building along C-5 Road, Brgy. San Isidro, Phase II",
+  );
+  assert.equal(displayText("CAVITE 1ST DISTRICT ENGINEERING OFFICE"), "Cavite 1st District Engineering Office");
+  assert.equal(displayText("DPWH NCR - LGU OF STA. ROSA 24KC0011"), "DPWH NCR - LGU of Sta. Rosa 24KC0011");
+  assert.equal(displayText("ST. JUDE'S BUILDERS AND SUPPLY"), "St. Jude's Builders and Supply");
+  assert.equal(displayText("PAGAWAAN NG KALSADA SA DASMARIÑAS"), "Pagawaan ng Kalsada sa Dasmariñas");
+  assert.equal(displayText("MOTOR VEHICLE USER'S CHARGE (MVUC) ALONG DAANG MAHARLIKA (LZ), MOLINO HOA OFFICE"), "Motor Vehicle User's Charge (MVUC) along Daang Maharlika (LZ), Molino HOA Office");
+  assert.equal(displayText("Kalsada sa Burol"), "Kalsada sa Burol", "mixed case is left alone");
+  assert.equal(displayText(""), "");
 });

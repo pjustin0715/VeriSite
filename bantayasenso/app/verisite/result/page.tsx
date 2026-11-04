@@ -9,7 +9,7 @@ import Icon, { type IconName } from "@/components/Icon";
 import PageHeader from "@/components/PageHeader";
 import type { HazardReading } from "../ai";
 import { clearDraft, getDraft, sendReport, today, useData, useDraft, type Draft } from "../data";
-import { matchProject, projectsOf, signChecks, type Project, type State } from "../store";
+import { displayText, matchProject, projectsOf, signChecks, type Project, type State } from "../store";
 
 const bigBox = "size-[26px] flex-none cursor-pointer accent-ayon disabled:cursor-not-allowed";
 const redWhenChecked = "has-checked:shadow-[inset_0_0_0_1.5px_#F2B8B2,0_10px_20px_rgba(201,52,43,.08)]";
@@ -182,7 +182,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
         <Card className="flex items-center gap-[11px] py-2 pr-3 pl-2">
           <Image src={sitePhoto || draft.photo} alt="Ang litratong kinuha mo" width={128} height={112} unoptimized className="h-14 w-16 flex-none rounded-[13px] object-cover" />
           <span className="min-w-0 grow">
-            <Text title={project?.name ?? "Walang tugmang proyekto"} note={project ? project.place : "Pumili ng proyekto"} />
+            <Text title={project ? displayText(project.name) : "Walang tugmang proyekto"} note={project ? displayText(project.place) : "Pumili ng proyekto"} />
             <span className="mt-0.5 block text-14 font-medium text-muted">
               {sitePhoto ? "Litrato ng problema sa lugar" : "Litrato ng paskil"}
             </span>
@@ -369,7 +369,7 @@ function ResultForm({ data, draft }: { data: State; draft: Draft & Required<Pick
                   className={`flex cursor-pointer items-center gap-3 rounded-card px-3 py-2.5 text-left ${p.id === projectId ? "bg-soft" : "bg-white shadow-[inset_0_0_0_1.5px_#D8E6EF]"}`}
                 >
                   <Image src={`/verisite/${p.image}.png`} alt="" width={128} height={112} className="h-12 w-14 flex-none rounded-xl object-cover" />
-                  <Text title={p.name} note={p.place} />
+                  <Text title={displayText(p.name)} note={displayText(p.place)} />
                   {p.id === projectId && <Icon name="check" size={22} color="#2E9E6B" strokeWidth={2.6} />}
                 </button>
               ))}

@@ -10,7 +10,7 @@ import NotFound from "@/components/NotFound";
 import ReportRow from "@/components/ReportRow";
 import StatusLabel from "@/components/StatusLabel";
 import { today, toggleFollow, useData, useDraft } from "../../data";
-import { longDate, peso, projectsOf, reportsFor, userOf, type Project } from "../../store";
+import { displayText, longDate, peso, projectsOf, reportsFor, userOf, type Project } from "../../store";
 
 const summaries: Partial<Record<Project["status"], string>> = {
   lampas: "Lampas na ito sa nakapaskil na petsa. Maaaring may aprubadong dagdag na panahon, kaya tinitingnan pa ng LGU.",
@@ -44,10 +44,10 @@ export default function ProjectView() {
   const reports = reportsFor(data, p.id);
   const rows: [IconName, string, string][] = [
     ["peso", "Halaga", peso(p.budget)],
-    ["person", "Kontratista", p.contractor],
+    ["person", "Kontratista", displayText(p.contractor)],
     ["calendar", "Sinimulan", longDate(p.startDate)],
     ["calendar", "Dapat matapos", longDate(p.targetDate)],
-    ["office", "Opisina", p.office],
+    ["office", "Opisina", displayText(p.office)],
     ["shield", "Rekord", p.record],
   ];
 
@@ -64,8 +64,8 @@ export default function ProjectView() {
         </div>
         <div className="relative z-[1] px-5 pt-[170px] pb-10">
           <StatusLabel status={p.status} variant="soft" label={p.status === "lampas" ? `Lampas ${p.daysLate} araw` : undefined} />
-          <h1 className="mt-2 text-[24px] leading-[1.2] font-bold tracking-[-0.4px] text-white break-words">{p.name}</h1>
-          <p className="mt-[3px] text-base text-[#DCEBE6] break-words">{p.address}</p>
+          <h1 className="mt-2 text-[24px] leading-[1.2] font-bold tracking-[-0.4px] text-white break-words">{displayText(p.name)}</h1>
+          <p className="mt-[3px] text-base text-[#DCEBE6] break-words">{displayText(p.address)}</p>
         </div>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { today, useData } from "./data";
+import { today, useData, useSampleMode } from "./data";
 import { userOf } from "./store";
 
 // Screens for logged-out people. "/verisite" is the developer preview of the parts.
@@ -14,6 +14,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const router = useRouter();
   const data = useData();
+  const sampleMode = useSampleMode();
   const loggedIn = data ? !!userOf(data, today()) : null; // null until the browser loads the data
   const isEntry = entry.includes(path);
   const open = path === "/verisite" || (isEntry ? loggedIn !== true : loggedIn === true);
@@ -25,5 +26,14 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }, [loggedIn, isEntry, path, router]);
 
   // Always render the page, only hidden: returning null "drops" the page segment, which breaks Next's instant-navigation check.
-  return <div className={open ? "contents" : "hidden"}>{children}</div>;
+  return (
+    <div className={open ? "contents" : "hidden"}>
+      {sampleMode && (
+        <p role="status" className="pointer-events-none fixed top-[max(6px,env(safe-area-inset-top))] left-1/2 z-50 -translate-x-1/2 rounded-full bg-ink/80 px-2.5 py-0.5 text-14 font-semibold whitespace-nowrap text-white">
+          Halimbawang datos lang
+        </p>
+      )}
+      {children}
+    </div>
+  );
 }

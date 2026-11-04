@@ -7,7 +7,7 @@ import Icon from "@/components/Icon";
 import PageHeader from "@/components/PageHeader";
 import SitePin from "@/components/SitePin";
 import { today, useData } from "../data";
-import { priorityOf, projectsOf, type Project } from "../store";
+import { displayText, priorityOf, projectsOf, type Project } from "../store";
 
 const handled = { bago: "", tinitingnan: " • Tinitingnan", naaksyunan: " • Tapos" };
 
@@ -34,7 +34,7 @@ export default function PriorityPage() {
                 </span>
                 <SitePin project={p} />
                 <span className="ml-[5px] min-w-0 grow text-lg leading-[1.15] font-bold">
-                  {p.name}
+                  {displayText(p.name)}
                   <span className="mt-0.5 block text-15 font-medium text-muted">{reason(p)}</span>
                 </span>
                 <Icon name="next" size={22} color="#5F6E74" />

@@ -12,7 +12,7 @@ import IllustratedMap from "@/components/IllustratedMap";
 import StatusLabel from "@/components/StatusLabel";
 import { DEMO_CENTER } from "@/lib/supabase";
 import { today, useData } from "../data";
-import { priorityOf, projectsOf, type Project } from "../store";
+import { displayText, priorityOf, projectsOf, type Project } from "../store";
 
 // Case- and accent-insensitive, so "dasmarinas" finds "Dasmariñas".
 const fold = (t: string) => t.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().trim();
@@ -120,7 +120,7 @@ export default function MapView() {
           <Card href={`/verisite/project/${selected.id}?from=map`} className="flex h-[104px] w-full items-center gap-3 p-2.5 overflow-hidden">
             <Image src={`/verisite/${selected.image}.png`} alt="" width={192} height={168} loading="eager" className="h-[84px] w-24 flex-none rounded-[14px] object-cover" />
             <span className="min-w-0 grow overflow-hidden">
-              <span className="line-clamp-2 max-h-[2.5em] overflow-hidden text-17 leading-[1.2] font-bold break-words">{selected.name}</span>
+              <span className="line-clamp-2 max-h-[2.5em] overflow-hidden text-17 leading-[1.2] font-bold break-words">{displayText(selected.name)}</span>
               <span className="mt-1.5 block">
                 <StatusLabel status={selected.status} variant="tint" label={selected.status === "lampas" ? `Lampas ${selected.daysLate} araw` : undefined} />
               </span>

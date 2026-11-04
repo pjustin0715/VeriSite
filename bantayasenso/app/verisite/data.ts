@@ -13,7 +13,7 @@ import {
 import type { AiResult } from "./ai";
 import { sample } from "./sample-data";
 import {
-  addAccount, addDays, addReport, badgeFor, checkSignup, confirmReports, findAccount, normMobile, readUpdate, seedState, setPassword, setSiteStatus, toggleFollowed, upgrade,
+  addAccount, addDays, addReport, badgeFor, checkSignup, confirmReports, findAccount, normMobile, onlyProjects, readUpdate, seedState, setPassword, setSiteStatus, toggleFollowed, upgrade, withHidden,
   type BadgeName, type ProjectRecord, type Report, type ReportStatus, type SignupErrors, type SignupInput, type State,
 } from "./store";
 
@@ -23,13 +23,26 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export const today = () => new Date().toLocaleDateString("sv"); // local YYYY-MM-DD
 
-let cache: { raw: string | null; ver: number; state: State } | null = null;
+let cache: { raw: string | null; ver: number; stored: State; state: State } | null = null;
 let memory: string | null = null; // used when localStorage is blocked (private mode)
 let userCoords = { ...DEMO_CENTER };
 let syncStarted = false;
 let remoteProjects = new Map<string, ProjectRecord>();
 let remoteVer = 0;
 const SAMPLE_IDS = new Set(sample.projects.map((p) => p.id));
+// "live": the backend returned projects, so only real ones show. "sample": it failed or had none, so only samples show.
+// "loading": neither yet; real (saved) projects only, so samples never flash in before real data.
+let mode: "loading" | "live" | "sample" = "loading";
+const isSample = (id: string) => SAMPLE_IDS.has(id);
+const isReal = (id: string) => !SAMPLE_IDS.has(id);
+function setMode(next: typeof mode) {
+  if (mode === next) return;
+  mode = next;
+  remoteVer++;
+  cache = null;
+  window.dispatchEvent(new Event(CHANGED));
+}
+export const useSampleMode = () => useSyncExternalStore(subscribe, () => mode === "sample", () => false);
 
 function readRaw() {
   try {
@@ -87,6 +100,7 @@ export function mapSupabaseProject(row: ProjectStatusRow, existing?: ProjectReco
 
 function mergeProjectsIntoState(rows: ProjectStatusRow[], prioritize = false) {
   if (!rows.length) return;
+  mode = "live";
   if (prioritize) {
     const next = new Map<string, ProjectRecord>();
     for (const r of rows) {
@@ -141,15 +155,15 @@ export async function loadViewportProjects(bounds?: { south: number; north: numb
 }
 
 function loadRegionsOverview() {
-  for (const offset of [460, 1460, 2460, 3460, 4460]) {
+  return [460, 1460, 2460, 3460, 4460].map((offset) =>
     supabase
       .from("project_status")
       .select("*")
       .range(offset, offset + 999)
       .then(({ data }) => {
         if (data && data.length > 0) mergeProjectsIntoState(data as ProjectStatusRow[], false);
-      });
-  }
+      })
+  );
 }
 
 export async function ensureProjectByContractId(rawCid?: string | null): Promise<ProjectRecord | null> {
@@ -295,8 +309,9 @@ function startBackgroundSync() {
       loadViewportProjects();
     }
   );
-  loadViewportProjects();
-  loadRegionsOverview();
+  Promise.allSettled([loadViewportProjects(), ...loadRegionsOverview()]).then(() => {
+    if (!remoteProjects.size) setMode("sample");
+  });
   syncReportsFromSupabase();
 }
 
@@ -307,19 +322,18 @@ function slimProjects(state: State): ProjectRecord[] {
   return state.projects.filter((p) => keepIds.has(p.id));
 }
 
+// Fresh backend rows replace saved copies (their report counts come from the backend).
 function withRemote(state: State): State {
   if (!remoteProjects.size) return state;
   const byId = new Map<string, ProjectRecord>();
   for (const p of state.projects) byId.set(p.id, p);
-  for (const [id, p] of remoteProjects) {
-    if (!byId.has(id)) byId.set(id, p);
-  }
+  for (const [id, p] of remoteProjects) byId.set(id, p);
   return { ...state, projects: Array.from(byId.values()) };
 }
 
 function load(): State {
   startBackgroundSync();
-  const raw = readRaw();
+  let raw = readRaw();
   if (cache && cache.raw === raw && cache.ver === remoteVer) return cache.state;
   let base: State | null = null;
   try {
@@ -334,24 +348,22 @@ function load(): State {
     base = seedState(sample, today());
     const fresh = JSON.stringify(base);
     writeRaw(fresh);
-    const full = withRemote(base);
-    cache = { raw: readRaw() ?? fresh, ver: remoteVer, state: full };
-    return full;
+    raw = readRaw() ?? fresh;
   }
-  const full = withRemote(base);
-  cache = { raw, ver: remoteVer, state: full };
-  return full;
+  // Saved data (old installs included) holds both kinds; show one. Saving puts the hidden kind back.
+  const state = mode === "sample" ? onlyProjects(base, isSample) : onlyProjects(withRemote(base), isReal);
+  cache = { raw, ver: remoteVer, stored: base, state };
+  return state;
 }
 
-function save(state: State) {
+function save(shown: State) {
+  load();
+  const state = withHidden(shown, cache!.stored, mode === "sample" ? isSample : isReal);
   for (const p of state.projects) {
     if (remoteProjects.has(p.id)) remoteProjects.set(p.id, p);
   }
-  const slim = { ...state, projects: slimProjects(state) };
-  const raw = JSON.stringify(slim);
-  writeRaw(raw);
-  const full = withRemote(slim);
-  cache = { raw: readRaw() ?? raw, ver: remoteVer, state: full };
+  writeRaw(JSON.stringify({ ...state, projects: slimProjects(state) }));
+  cache = null;
   window.dispatchEvent(new Event(CHANGED));
 }
 

@@ -7,7 +7,7 @@ import SitePin from "@/components/SitePin";
 import { statuses } from "@/components/StatusLabel";
 import { DEMO_CENTER } from "@/lib/supabase";
 import { loadViewportProjects } from "@/app/verisite/data";
-import type { Project } from "@/app/verisite/store";
+import { displayText, type Project } from "@/app/verisite/store";
 
 const box = { west: 120.9, east: 120.99, north: 14.36, south: 14.28 };
 
@@ -263,7 +263,7 @@ export default function IllustratedMap({
                   data-id={p.id}
                   onClick={() => onSelect(p.id)}
                   aria-pressed={on}
-                  aria-label={`${p.place}: ${p.reportCount} report, ${statuses[p.status].label}`}
+                  aria-label={`${displayText(p.place)}: ${p.reportCount} report, ${statuses[p.status].label}`}
                   className={`absolute flex w-[126px] -translate-x-1/2 -translate-y-[23px] cursor-pointer flex-col items-center gap-1 ${on ? "z-[2]" : "z-[1]"}`}
                   style={{ left: `${x}%`, top: `${y}%` }}
                 >
@@ -271,7 +271,7 @@ export default function IllustratedMap({
                   <span
                     className={`rounded-[9px] px-[9px] py-[3px] text-[14px] font-semibold whitespace-nowrap shadow-[0_3px_7px_rgba(20,60,90,.22)] ${on ? "bg-ink text-white" : "bg-white text-ink"}`}
                   >
-                    {p.place}
+                    {displayText(p.place)}
                   </span>
                 </button>
               );

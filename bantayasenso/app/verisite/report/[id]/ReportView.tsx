@@ -11,7 +11,7 @@ import NotFound from "@/components/NotFound";
 import PageHeader from "@/components/PageHeader";
 import StatusLabel from "@/components/StatusLabel";
 import { useData } from "../../data";
-import { longDate } from "../../store";
+import { displayText, longDate } from "../../store";
 
 // One public report: bigger photo (tap to enlarge), reporter and badge, date, LGU status, issues and the full description.
 export default function ReportView() {
@@ -31,7 +31,7 @@ export default function ReportView() {
   const photo = { src: r.photo, unoptimized: r.photo.startsWith("data:") };
 
   return (
-    <PageHeader back={back} title="Report" subtitle={p?.name ?? "Wala na ang proyekto"}>
+    <PageHeader back={back} title="Report" subtitle={p ? displayText(p.name) : "Wala na ang proyekto"}>
       <button type="button" onClick={() => setZoom(true)} aria-label="Palakihin ang litrato" className="relative block cursor-zoom-in overflow-hidden rounded-card shadow-card">
         <Image {...photo} alt="Litrato ng report" width={900} height={675} className="aspect-[4/3] h-auto w-full object-cover" />
         <span className="absolute right-3 bottom-3 flex items-center gap-1.5 rounded-xl bg-white/95 px-2.5 py-1.5 text-15 font-semibold text-ink">

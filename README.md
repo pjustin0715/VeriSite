@@ -1,8 +1,8 @@
-# BantayAsenso (VeriSite)
+#VeriSite
 
-> 🏆 **2nd Runner-Up** — Built in 30 hours to make Philippine public works transparent, verifiable, and safe for everyday commuters.
+> 🏆 **2nd Runner-Up (PLDT AI in 30 Hours)** — Built in 30 hours to make Philippine public works transparent, verifiable, and safe for everyday commuters.
 
-**BantayAsenso** (branded in-app as **VeriSite**) is a mobile-first Progressive Web App (PWA) for road-work transparency and hazard reporting in the Philippines. Citizens point their phone camera at a DPWH/LGU construction signboard (*paskil*) or an unguarded road excavation (*maling hukay*), and the app reads the sign with vision AI, cross-checks it against official [DPWH Transparency Portal](https://transparency.dpwh.gov.ph) records, flags missing barricades or warning lights, and drafts a pre-filled report or official DPWH complaint in seconds.
+**VeriSite** is a mobile-first Progressive Web App (PWA) for road-work transparency and hazard reporting in the Philippines. Citizens point their phone camera at a DPWH/LGU construction signboard (*paskil*) or an unguarded road excavation (*maling hukay*), and the app reads the sign with vision AI, cross-checks it against official [DPWH Transparency Portal](https://transparency.dpwh.gov.ph) records, flags missing barricades or warning lights, and drafts a pre-filled report or official DPWH complaint in seconds.
 
 <p align="center">
   <img src="bantayasenso/public/screenshots/mobile-home.png" alt="VeriSite Home" width="260" />
